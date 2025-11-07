@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ECommerceDaniShop.Model\ECommerceDinoShop.Model.csproj" />
+    <ProjectReference Include="..\ECommerceDinoShop.DTO\ECommerceDinoShop.DTO.csproj" />
+    <ProjectReference Include="..\ECommerceDinoShop.Repository\ECommerceDinoShop.Repository.csproj" />
+    <ProjectReference Include="..\ECommerceDinoShop.Utilities\ECommerceDinoShop.Utilities.csproj" />
+  </ItemGroup>
+
+</Project>
