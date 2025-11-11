@@ -1,5 +1,9 @@
 using ECommerceDinoShop.Repository; //Para poder acceder a la cadena de conexion con la DB
-using Microsoft.EntityFrameworkCore; //Para poder acceder a la cadena de conexion con la DB
+using ECommerceDinoShop.Repository.Contract;
+using ECommerceDinoShop.Repository.Implementation;
+using ECommerceDinoShop.Utilities;
+using Microsoft.EntityFrameworkCore;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,11 +17,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
+//Connection DB
 builder.Services.AddDbContext<DbdinoShopContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("connection")); //Para poder acceder a la cadena de conexion con la DB
 });
+
+// Add Transient Generic Repository
+builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 // Add services to the container.
 

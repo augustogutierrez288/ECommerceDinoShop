@@ -10,8 +10,4 @@
     <ProjectReference Include="..\ECommerceDaniShop.Model\ECommerceDinoShop.Model.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Implementation\" />
-  </ItemGroup>
-
 </Project>
