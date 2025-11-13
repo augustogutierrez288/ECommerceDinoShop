@@ -1,6 +1,8 @@
 using ECommerceDinoShop.Repository; //Para poder acceder a la cadena de conexion con la DB
 using ECommerceDinoShop.Repository.Contract;
 using ECommerceDinoShop.Repository.Implementation;
+using ECommerceDinoShop.Service.Contract;
+using ECommerceDinoShop.Service.Implementation;
 using ECommerceDinoShop.Utilities;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +29,12 @@ builder.Services.AddDbContext<DbdinoShopContext>(options =>
 builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 

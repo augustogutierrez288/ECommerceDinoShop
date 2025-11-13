@@ -9,6 +9,6 @@ namespace ECommerceDinoShop.Service.Contract
         Task<SesionDTO> Authorization(LoginDTO model);
         Task<UserDTO> Create(UserDTO model);
         Task<bool> Update(UserDTO model);
-        Task<bool> Remove(int id);
+        Task<bool> Delete(int id);
     }
 }

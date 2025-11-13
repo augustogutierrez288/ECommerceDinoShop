@@ -9,6 +9,6 @@ namespace ECommerceDinoShop.Service.Contract
         Task<ProductDTO> Obtain(int id);
         Task<ProductDTO> Create(ProductDTO model);
         Task<bool> Update(ProductDTO model);
-        Task<bool> Remove(int id);
+        Task<bool> Delete(int id);
     }
 }

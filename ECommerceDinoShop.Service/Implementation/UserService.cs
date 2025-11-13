@@ -7,28 +7,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceDinoShop.Service.Implementation
 {
-    public class ProductService : IProductService
+    public class UserService : IUserService
     {
-        private readonly IGenericRepository<Product> _modelRepository;
+        private readonly IGenericRepository<User> _modelRepository;
         private readonly IMapper _mapper;
 
-        public ProductService(IGenericRepository<Product> modelRepository, IMapper mapper)
+        public UserService(IGenericRepository<User> modelRepository, IMapper mapper)
         {
             _modelRepository = modelRepository;
             _mapper = mapper;
         }
 
-        public async Task<List<ProductDTO>> Catalog(string category, string search)
+        public async Task<SesionDTO> Authorization(LoginDTO model)
         {
             try
             {
-                var consult = _modelRepository.Consult(p =>
-                p.Name.ToLower().Contains(search.ToLower()) &&
-                p.IdCategoryNavigation.Name.ToLower().Contains(category.ToLower())
-                );
+                var consult = _modelRepository.Consult(p => p.Email == model.Email && p.Password == model.Password);
+                var fromDbModel = await consult.FirstOrDefaultAsync();
 
-                List<ProductDTO> list = _mapper.Map<List<ProductDTO>>(await consult.ToListAsync());
-                return list;
+                if (fromDbModel != null)
+                    return _mapper.Map<SesionDTO>(fromDbModel);
+                else
+                    throw new TaskCanceledException("No se encontro coincidencias");
             }
             catch (Exception ex)
             {
@@ -36,15 +36,15 @@ namespace ECommerceDinoShop.Service.Implementation
             }
         }
 
-        public async Task<ProductDTO> Create(ProductDTO model)
+        public async Task<UserDTO> Create(UserDTO model)
         {
             try
             {
-                var dbModel = _mapper.Map<Product>(model);
+                var dbModel = _mapper.Map<User>(model);
                 var rspModel = await _modelRepository.Create(dbModel);
 
-                if (rspModel.IdProduct != 0)
-                    return _mapper.Map<ProductDTO>(rspModel);
+                if (rspModel.IdUser != 0)
+                    return _mapper.Map<UserDTO>(rspModel);
                 else
                     throw new TaskCanceledException("No se puede crear");
             }
@@ -52,20 +52,18 @@ namespace ECommerceDinoShop.Service.Implementation
             {
                 throw ex;
             }
-            ;
         }
 
-        public async Task<List<ProductDTO>> List(string search)
+        public async Task<List<UserDTO>> List(string role, string search)
         {
             try
             {
                 var consult = _modelRepository.Consult(p =>
-                p.Name.ToLower().Contains(search.ToLower())
+                p.Role == role &&
+                string.Concat(p.FullName.ToLower(), p.Email.ToLower()).Contains(search.ToLower())
                 );
 
-                consult = consult.Include(c => c.IdCategoryNavigation);
-
-                List<ProductDTO> list = _mapper.Map<List<ProductDTO>>(await consult.ToListAsync());
+                List<UserDTO> list = _mapper.Map < List <UserDTO>>(await consult.ToListAsync());
                 return list;
             }
             catch (Exception ex)
@@ -74,16 +72,15 @@ namespace ECommerceDinoShop.Service.Implementation
             }
         }
 
-        public async Task<ProductDTO> Obtain(int id)
+        public async Task<UserDTO> Obtain(int id)
         {
             try
             {
-                var consult = _modelRepository.Consult(p => p.IdProduct == id);
-                consult = consult.Include(c => c.IdCategoryNavigation);
+                var consult = _modelRepository.Consult(p => p.IdUser == id);
                 var fromDbModel = await consult.FirstOrDefaultAsync();
 
                 if (fromDbModel != null)
-                    return _mapper.Map<ProductDTO>(fromDbModel);
+                    return _mapper.Map<UserDTO>(fromDbModel);
                 else
                     throw new TaskCanceledException("No se encontraron resultados");
             }
@@ -97,8 +94,8 @@ namespace ECommerceDinoShop.Service.Implementation
         {
             try
             {
-                var consulta = _modelRepository.Consult(p => p.IdProduct == id);
-                var fromDbModel = await consulta.FirstOrDefaultAsync();
+                var consult = _modelRepository.Consult(p => p.IdUser == id);
+                var fromDbModel = await consult.FirstOrDefaultAsync();
 
                 if (fromDbModel != null)
                 {
@@ -106,7 +103,7 @@ namespace ECommerceDinoShop.Service.Implementation
 
                     if (!response)
                         throw new TaskCanceledException("No se pudo eliminar");
-
+                    
                     return response;
                 }
                 else
@@ -120,22 +117,18 @@ namespace ECommerceDinoShop.Service.Implementation
             }
         }
 
-        public async Task<bool> Update(ProductDTO model)
+        public async Task<bool> Update(UserDTO model)
         {
             try
             {
-                var consult = _modelRepository.Consult(p => p.IdProduct == model.IdProduct);
+                var consult = _modelRepository.Consult(p => p.IdUser == model.IdUser);
                 var fromDbModel = await consult.FirstOrDefaultAsync();
 
                 if (fromDbModel != null)
                 {
-                    fromDbModel.Name = model.Name;
-                    fromDbModel.Description = model.Description;
-                    fromDbModel.IdCategory = model.IdCategory;
-                    fromDbModel.Price = model.Price;
-                    fromDbModel.SalePrice = model.SalePrice;
-                    fromDbModel.ImageUrl = model.ImageUrl;
-
+                    fromDbModel.FullName = model.FullName;
+                    fromDbModel.Email = model.Email;
+                    fromDbModel.Password = model.Password;
 
                     var response = await _modelRepository.Update(fromDbModel);
 
