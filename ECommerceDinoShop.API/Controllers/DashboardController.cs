@@ -15,8 +15,8 @@ namespace ECommerceDinoShop.API.Controllers
             _dashboardService = dashboardService;
         }
 
-        [HttpGet("Resumen")]
-        public IActionResult Resumen()
+        [HttpGet("Resume")]
+        public IActionResult Resume()
         {
             var response = new ResponseDTO<DashboardDTO>();
 

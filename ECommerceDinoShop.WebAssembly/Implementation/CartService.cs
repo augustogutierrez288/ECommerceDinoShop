@@ -1,0 +1,102 @@
+﻿using Blazored.LocalStorage;
+using Blazored.Toast.Services;
+using ECommerceDinoShop.DTO;
+using ECommerceDinoShop.WebAssembly.Contract;
+
+namespace ECommerceDinoShop.WebAssembly.Implementation
+{
+    public class CartService : ICartService
+    {
+        private ILocalStorageService _localStorageService;
+        private ISyncLocalStorageService _syncLocalStorageService;
+        private IToastService _toastService;
+
+        public CartService(
+            ILocalStorageService localStorageService,
+            ISyncLocalStorageService syncLocalStorageService,
+            IToastService toastService
+            )
+        {
+            _localStorageService = localStorageService;
+            _syncLocalStorageService = syncLocalStorageService;
+            _toastService = toastService;
+        }
+
+        public event Action ShowItems;
+
+        public async Task AddCart(CartDTO model)
+        {
+            try
+            {
+                var cart = await _localStorageService.GetItemAsync<List<CartDTO>>("cart");
+                if (cart == null)
+                    cart = new List<CartDTO>();
+
+                var found = cart.FirstOrDefault(c => c.Product.IdProduct == model.Product.IdProduct);
+
+                if (found != null)
+                    cart.Remove(found);
+
+                cart.Add(model);
+                await _localStorageService.SetItemAsync("cart", cart);
+
+                if (found != null)
+                    _toastService.ShowSuccess("Producto fue actualizado en carrito");
+                else
+                    _toastService.ShowSuccess("Producto fue agregado en carrito");
+
+                ShowItems.Invoke();
+
+            }
+            catch
+            {
+                _toastService.ShowSuccess("No se pudo agregar al carrito");
+            }
+        }
+
+        public async Task ClearCart()
+        {
+            await _localStorageService.RemoveItemAsync("cart");
+            ShowItems.Invoke();
+        }
+
+        public async Task DeleteCart(int idProduct)
+        {
+            try
+            {
+                var cart = await _localStorageService.GetItemAsync<List<CartDTO>>("cart");
+                if (cart != null)
+                {
+                    var element = cart.FirstOrDefault(c => c.Product.IdProduct == idProduct);
+                    if (element != null)
+                    {
+                        cart.Remove(element);
+                        await _localStorageService.SetItemAsync("cart", cart);
+                        ShowItems.Invoke();
+                    }
+
+                }
+            }
+            catch
+            {
+                _toastService.ShowSuccess("No se pudo eliminar el producto");
+            }
+        }
+
+        public int QuantityProducts()
+        {
+            var cart = _syncLocalStorageService.GetItem<List<CartDTO>>("carrito");
+            return cart == null ? 0 : cart.Count();
+        }
+
+        public async Task<List<CartDTO>> ReturnCart()
+        {
+            var cart = await _localStorageService.GetItemAsync<List<CartDTO>>("cart");
+
+            if (cart == null)
+                cart = new List<CartDTO>();
+
+            return cart;
+        }
+    }
+}
