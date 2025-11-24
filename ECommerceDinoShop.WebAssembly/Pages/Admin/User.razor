@@ -1,0 +1,133 @@
+﻿@page "/dashboard/usuario"
+@page "/dashboard/usuario/{Id:int}"
+@layout DashboardLayout
+
+
+@inject IUserService _userService
+@inject IToastService _toastService
+@inject NavigationManager _navServicio
+
+@attribute [Authorize(Roles = "Administrador")];
+
+<div class="row justify-content-center  mt-3">
+    <p class="col-sm-12 col-md-8 col-xl-10 h4 mt-2">@Title</p>
+</div>
+<div class="row justify-content-center  mt-3">
+    <div class="col-sm-12 col-md-8 col-xl-10">
+        <EditForm Model="model" OnValidSubmit="SaveChanges">
+            <DataAnnotationsValidator></DataAnnotationsValidator>
+
+            <div class="input-group">
+                <span class="input-group-text bg-light" id="basic-addon3">Nombre Completo</span>
+                <input type="text" class="form-control" @bind-value="model.FullName">
+            </div>
+            <ValidationMessage For="@(() => model.FullName)" />
+
+            <div class="input-group mt-3">
+                <span class="input-group-text bg-light" id="basic-addon3">Correo</span>
+                <input type="text" class="form-control" @bind-value="model.Email"><br />
+            </div>
+            <ValidationMessage For="@(() => model.Email)" />
+
+            <div class="input-group mt-3">
+                <span class="input-group-text bg-light" id="basic-addon3">Contraseña</span>
+                <input type="password" class="form-control" @bind-value="model.Password">
+            </div>
+            <ValidationMessage For="@(() => model.Password)" />
+
+            <div class="input-group mt-3">
+                <span class="input-group-text bg-light" id="basic-addon3">Confirmar Contraseña</span>
+                <input type="password" class="form-control" @bind-value="model.PasswordConfirms">
+            </div>
+            <ValidationMessage For="@(() => model.PasswordConfirms)" />
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary" style="width:130px">@button</button>
+                <a href="/dashboard/usuarios" class="btn btn-secondary" style="width:130px">Volver</a>
+            </div>
+        </EditForm>
+
+
+    </div>
+
+</div>
+
+  
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private string Title = "Nuevo usuario";
+    private string button = "Crear";
+    private UserDTO model = new UserDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if(Id != 0)
+        {
+            Title = "Editar usuario";
+            button = "Actualizar";
+
+            var response = await _userService.Obtain(Id);
+            if (response.IsCorrect)
+            {
+                model = (UserDTO)response.Result!;
+                model.PasswordConfirms = model.Password;
+            }
+            else
+            {
+                _toastService.ShowWarning(response.Message);
+
+            }
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        if(model.Password != model.PasswordConfirms)
+        {
+            _toastService.ShowWarning("Las contraseñas no coinciden");
+            return;
+        }
+
+        bool res = true;
+        string message = string.Empty;
+
+        if(Id != 0)
+        {
+            var response = await _userService.Update(model);
+            if (response.IsCorrect)
+            {
+                message = "Usuario fue modificado";
+            }
+            else
+            {
+                res = false;
+                message = "No se pudo editar";
+            }
+        }
+        else
+        {
+            model.Role = "Administrador";
+            var response = await _userService.Create(model);
+            if (response.IsCorrect)
+            {
+                message = "Usuario fue creado";
+            }
+            else
+            {
+                res = false;
+                message = "No se pudo crear";
+            }
+        }
+
+        if (res)
+        {
+            _toastService.ShowSuccess(message);
+            _navServicio.NavigateTo("/dashboard/usuarios");
+        }
+        else
+        {
+            _toastService.ShowError(message);
+        }
+    }
+}

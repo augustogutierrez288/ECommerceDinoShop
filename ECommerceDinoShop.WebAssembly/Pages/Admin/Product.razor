@@ -1,0 +1,183 @@
+﻿@page "/dashboard/producto"
+@page "/dashboard/producto/{Id:int}"
+@layout DashboardLayout
+
+@inject IProductService _productService
+@inject ICategoryService _categoryService
+@inject IToastService _toastService
+@inject NavigationManager _navServicio
+
+@attribute [Authorize(Roles = "Administrador")];
+
+<div class="row justify-content-center  mt-3">
+    <p class="col-sm-12 col-md-8 col-xl-10 h4 mt-2">@Title</p>
+</div>
+<div class="row justify-content-center  mt-3">
+    <div class="col-sm-12 col-md-8 col-xl-10">
+
+        <EditForm Model="model" OnValidSubmit="SaveChanges">
+            <DataAnnotationsValidator></DataAnnotationsValidator>
+            <div class="input-group">
+                <span class="input-group-text bg-light" id="basic-addon3">Nombre</span>
+                <input type="text" class="form-control" @bind-value="model.Name">
+            </div>
+            <ValidationMessage For="@(() => model.Name)" />
+
+            <div class="input-group  mt-3">
+                <span class="input-group-text bg-light">Descripcion</span>
+                <textarea class="form-control" @bind="model.Description"></textarea>
+
+            </div>
+            <ValidationMessage For="@(() => model.Description)" />
+
+            <div class="input-group mt-3">
+                <label class="input-group-text bg-light" for="inputGroupSelect01">Categoria</label>
+                <select class="form-select" value="@model.IdCategory" @onchange="ChangeCategory">
+                    @foreach (var item in listCategory)
+                    {
+                        <option value="@item.IdCategory">@item.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="input-group mt-3">
+                <span class="input-group-text bg-light" id="basic-addon3">Precio</span>
+                <input type="number" class="form-control" @bind-value="model.Price">
+            </div>
+            <ValidationMessage For="@(() => model.Price)" />
+
+            <div class="input-group mt-3">
+                <span class="input-group-text bg-light" id="basic-addon3">Precio Oferta</span>
+                <input type="number" class="form-control" @bind-value="model.SalePrice">
+            </div>
+            <ValidationMessage For="@(() => model.SalePrice)" />
+
+            <div class="input-group mt-3">
+                <span class="input-group-text bg-light" id="basic-addon3">Cantidad</span>
+                <input type="number" class="form-control" @bind-value="model.Quantity">
+            </div>
+            <ValidationMessage For="@(() => model.Quantity)" />
+
+            <div class="input-group mt-3">
+                <label class="input-group-text bg-light">Imagen</label>
+                <InputFile type="file" class="form-control" accept="image/png, image/gif, image/jpeg, image/webp" OnChange="OnFileChange"></InputFile>
+            </div>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary" style="width:130px">@button</button>
+                <a href="/dashboard/productos" class="btn btn-secondary" style="width:130px">Volver</a>
+            </div>
+        </EditForm>
+
+
+
+
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private string Title = "Nuevo producto";
+    private string button = "Crear";
+    private List<CategoryDTO> listCategory = new List<CategoryDTO>();
+    private ProductDTO model = new ProductDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await _categoryService.List("");
+
+        if (response.IsCorrect)
+        {
+            listCategory =(List<CategoryDTO>)response.Result!;
+            if(listCategory.Any() && Id == 0)
+            {
+                model.IdCategory = listCategory.First().IdCategory;
+            }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != 0)
+        {
+            Title = "Editar producto";
+            button = "Actualizar";
+
+            var response = await _productService.Obtain(Id);
+            if (response.IsCorrect)
+            {
+                model = (ProductDTO)response.Result!;
+            }
+            else
+            {
+                _toastService.ShowWarning(response.Message);
+            }
+        }
+    }
+
+    void ChangeCategory(ChangeEventArgs e)
+    {
+        model.IdCategory = Convert.ToInt32(e.Value.ToString());
+    }
+
+    async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+        FileInfo fileInfo = new FileInfo(e.File.Name);
+        if (fileInfo.Extension.ToLower().Contains(".jpg") || fileInfo.Extension.ToLower().Contains(".png") || fileInfo.Extension.ToLower().Contains(".webp"))
+        {
+            var format = $"image/{fileInfo.Extension.Replace(".", "")}";
+            var resizeImage = await e.File.RequestImageFileAsync(format, 450, 300);
+            var buffer = new byte[resizeImage.Size];
+            await resizeImage.OpenReadStream().ReadAsync(buffer);
+
+            var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            model.ImageUrl = imageData;
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+
+        bool res = true;
+        string message = string.Empty;
+
+        if (Id != 0)
+        {
+            var response = await _productService.Update(model);
+            if (response.IsCorrect)
+            {
+                message = "El producto fue editado";
+            }
+            else
+            {
+                res = false;
+                message = "No se pudo editar el producto";
+            }
+        }
+        else
+        {
+            var response = await _productService.Create(model);
+            if (response.IsCorrect)
+            {
+                message = "El producto fue creado";
+            }
+            else
+            {
+                res = false;
+                message = "No se pudo crear el producto";
+            }
+        }
+
+        if (res)
+        {
+            _toastService.ShowSuccess(message);
+            _navServicio.NavigateTo("/dashboard/productos");
+        }
+        else
+        {
+            _toastService.ShowError(message);
+        }
+    }
+}

@@ -1,6 +1,6 @@
 ﻿using ECommerceDinoShop.DTO;
 
-namespace ECommerceDinoShop.WebAssembly.Contract
+namespace ECommerceDinoShop.WebAssembly.Services.Contract
 {
     public interface ICartService
     {

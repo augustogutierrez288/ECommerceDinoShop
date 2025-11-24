@@ -1,8 +1,8 @@
 ﻿using ECommerceDinoShop.DTO;
-using ECommerceDinoShop.WebAssembly.Contract;
+using ECommerceDinoShop.WebAssembly.Services.Contract;
 using System.Net.Http.Json;
 
-namespace ECommerceDinoShop.WebAssembly.Implementation
+namespace ECommerceDinoShop.WebAssembly.Services.Implementation
 {
     public class ProductService : IProductService
     {

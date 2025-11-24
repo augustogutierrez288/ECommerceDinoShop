@@ -81,7 +81,7 @@ namespace ECommerceDinoShop.API.Controllers
             return Ok(response);
         }
 
-        [HttpPut("Update")]
+        [HttpPut("Update/")]
         public async Task<IActionResult> Update([FromBody] CategoryDTO model)
         {
             var response = new ResponseDTO<bool>();

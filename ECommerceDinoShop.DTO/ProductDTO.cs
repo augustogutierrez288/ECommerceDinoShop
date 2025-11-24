@@ -25,7 +25,7 @@ namespace ECommerceDinoShop.DTO
 
         [Required(ErrorMessage = "Ingrese imagen")]
         public string? ImageUrl { get; set; }
-        public DateTime? FechaCreacioCreatedAtn { get; set; }
+        public DateTime? CreatedAt { get; set; }
         public virtual CategoryDTO? IdCategoryNavigation { get; set; }
     }
 }

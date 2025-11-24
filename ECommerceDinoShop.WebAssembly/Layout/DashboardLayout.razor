@@ -1,0 +1,21 @@
+﻿@using ECommerceDinoShop.WebAssembly.Components.Aside
+@using ECommerceDinoShop.WebAssembly.Components.Navbar
+@inherits LayoutComponentBase
+
+<BlazoredToasts />
+
+<section class="container-fluid container-dashboard">
+    <section class="row w-100 h-100">
+        <AsideDashboard/>
+        <main class="col-10 main-dashboard">
+            <NavDashboard/>
+            <section class="main-dashboard-section">
+                @Body
+            </section>
+        </main>
+    </section>
+</section>
+
+@code {
+
+}

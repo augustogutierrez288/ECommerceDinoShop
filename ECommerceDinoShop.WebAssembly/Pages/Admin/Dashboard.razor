@@ -1,0 +1,106 @@
+﻿@page "/dashboard"
+@layout DashboardLayout
+
+@inject IDashboardService _dashboardService
+
+@attribute [Authorize(Roles = "Administrador")];
+
+<div class="d-flex justify-content-between align-items-center gap-3">
+
+    <div class="card text-bg-primary mb-3" style="max-width: 18rem;">
+      <div class="card-header">Ventas</div>
+      <div class="card-body">
+        <h5 class="card-title">Cantidad de ventas</h5>
+        @if (loading)
+            {
+                <div class="spinner-border spinner-border-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="spinner-grow spinner-grow-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            }
+            else
+            {
+                <p class="card-text">@dashboard.TotalOrders</p>
+            }
+      </div>
+    </div>
+
+    <div class="card text-bg-success mb-3" style="max-width: 18rem;">
+      <div class="card-header">Venta bruta</div>
+      <div class="card-body">
+        <h5 class="card-title">Ingresos de ventas brutas</h5>
+            @if (loading)
+            {
+                <div class="spinner-border spinner-border-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="spinner-grow spinner-grow-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            }
+            else
+            {
+                <p class="card-text">$@dashboard.TotalRevenue</p>
+            }
+      </div>
+    </div>
+
+    <div class="card text-bg-danger mb-3" style="max-width: 18rem;">
+      <div class="card-header">Productos</div>
+      <div class="card-body">
+        <h5 class="card-title">Productos en stock</h5>
+        @if (loading)
+            {
+                <div class="spinner-border spinner-border-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="spinner-grow spinner-grow-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            }
+            else
+            {
+                <p class="card-text">@dashboard.TotalProducts</p>
+            }
+      </div>
+    </div>
+
+    <div class="card text-bg-warning mb-3" style="max-width: 18rem;">
+      <div class="card-header">Clientes</div>
+      <div class="card-body">
+        <h5 class="card-title">Total de clientes registrados</h5>
+        @if (loading)
+            {
+                <div class="spinner-border spinner-border-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="spinner-grow spinner-grow-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            }
+            else
+            {
+                <p class="card-text">@dashboard.TotalCustomers</p>
+            }
+      </div>
+    </div>
+
+</div>
+
+@code {
+    private DashboardDTO dashboard = new DashboardDTO();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await _dashboardService.Resume();
+        if (response.IsCorrect)
+        {
+            dashboard = (DashboardDTO)response.Result!;
+            loading = false;
+        }
+    }
+
+}

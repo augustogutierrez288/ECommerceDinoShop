@@ -42,7 +42,7 @@ namespace ECommerceDinoShop.Repository.Implementation
         {
             try
             {
-                _dbContext.Set<TModel>().Update(model);
+                _dbContext.Set<TModel>().Remove(model);
                 await _dbContext.SaveChangesAsync();
                 return true;
             }
@@ -56,7 +56,7 @@ namespace ECommerceDinoShop.Repository.Implementation
         {
             try
             {
-                _dbContext.Set<TModel>().Remove(model);
+                _dbContext.Set<TModel>().Update(model);
                 await _dbContext.SaveChangesAsync();
                 return true;
             }

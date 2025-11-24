@@ -102,7 +102,7 @@ namespace ECommerceDinoShop.Service.Implementation
         {
             try
             {
-                var consult = _modelRepository.Consult(p => p.IdCategory == model.IdCategoria);
+                var consult = _modelRepository.Consult(p => p.IdCategory == model.IdCategory);
                 var fromDbModel = await consult.FirstOrDefaultAsync();
 
                 if (fromDbModel != null)

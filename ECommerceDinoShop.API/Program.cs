@@ -70,4 +70,3 @@ app.MapControllers();
 app.UseCors("NewPolicy");
 
 app.Run();
-

@@ -1,0 +1,124 @@
+﻿@page "/dashboard/usuarios"
+@layout DashboardLayout
+
+@inject IUserService _userService
+@inject IToastService _toastService
+@inject SweetAlertService _swal
+
+@attribute [Authorize(Roles = "Administrador")];
+
+<div class="row justify-content-center  mt-3">
+    <div class="col-sm-6 col-md-4 col-xl-3 mb-4">
+        <div class="d-grid gap-1 col-12 mx-auto">
+            <a class="btn btn-primary" href="/dashboard/usuario">Nuevo usuario</a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-8 col-xl-9 mb-4">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Buscar usuario..." @bind-value="search">
+            <button class="btn btn-outline-secondary" type="button" @onclick="(async () => await ObtainUser(search))">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+@if (list != null)
+{
+    foreach (var item in list)
+    {
+        <div class="row gx-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 justify-content-start mt-2">
+
+            <div class="col mb-5">
+                <div class="card h-100">
+                    <div class="card-body p-4">
+                        <div class="text-center">
+                            <i class="oi oi-person" style="font-size:50px"></i>
+                        </div>
+                        <div class="text-start">
+                            <p class="m-1"><b>Nombre: </b>@item.FullName</p>
+                            <p class="m-1"><b>Correo: </b>@item.Email</p>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="row justify-content-between">
+                            <a class="col-5 btn btn-primary mt-auto" href="/dashboard/usuario/@item.IdUser">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                                  <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                  <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                                </svg>
+                                Editar
+                            </a>
+                            <button class="col-5 btn btn-outline-danger mt-auto" type="button" @onclick="(async () => await Delete(item))">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                                  <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"/>
+                                </svg>
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="d-flex align-items-center">
+      <strong role="status">Cargando...</strong>
+      <div class="spinner-border ms-auto" aria-hidden="true"></div>
+    </div>
+}
+
+@code {
+    private List<UserDTO>? list = null;
+    private string search = string.Empty;
+
+    private async Task ObtainUser(string value = "")
+    {
+        var response = await _userService.List("Administrador", value);
+        if (response.IsCorrect)
+        {
+            list = (List<UserDTO>)response.Result!;
+        }
+        else
+        {
+            list = new List<UserDTO>();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ObtainUser();
+    }
+
+    private async Task Delete(UserDTO model)
+    {
+        SweetAlertResult result = await _swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "¿Estas seguro?",
+            Text = $"Eliminar usuario: {model.FullName}",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Si, eliminar",
+            CancelButtonText = "No, volver"
+        });
+
+        if (result.IsConfirmed)
+        {
+            var response = await _userService.Delete(model.IdUser);
+            if (response.IsCorrect)
+            {
+                await ObtainUser();
+                _toastService.ShowSuccess("Usuario fue eliminado");
+            }
+            else
+            {
+                _toastService.ShowWarning(response.Message!);
+            }
+        }
+    }
+}

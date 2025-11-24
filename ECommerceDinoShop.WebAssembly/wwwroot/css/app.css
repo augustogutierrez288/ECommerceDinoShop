@@ -1,28 +1,227 @@
-html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+:root {
+    --primary-100: #86efac;
+    --primary-200: #f0fdf5;
+    --primary-300: #19725D;
+    --accent-100: #f5be0b;
+    --accent-200: #fef1c7;
+    --text-100: #292524;
+    --text-200: #78716c;
+    --bg-100: #fafaf9;
+    --bg-200: #f5f5f4;
+    --bg-300: #E0E2E5;
 }
 
-h1:focus {
-    outline: none;
+body{
+    width: 100vw !important;
+    overflow-x: hidden; 
+    font-family: "Open Sans", sans-serif !important;
+    font-optical-sizing: auto !important;
+    font-weight: 300 !important;
+    font-style: normal !important;
+    font-variation-settings: "wdth" 100 !important;
+    background-color: var(--bg-100);
+    color: var(--text-100);
 }
 
-a, .btn-link {
-    color: #0071c1;
+body::-webkit-scrollbar {
+    width: 10px;
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+body::-webkit-scrollbar-track {
+    background-color: var(--bg-100);
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+body::-webkit-scrollbar-thumb {
+    background-color: var(--primary-300);
+    border-radius: 15px;
 }
 
-.content {
-    padding-top: 1.1rem;
+.container-dashboard{
+    width: 100%;
+    height: 100vh !important;
+    overflow: hidden;
+    padding: 40px 0;
 }
+
+
+.main-dashboard{
+    overflow-y: scroll;
+    padding: 0 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.main-dashboard-section{
+    width: 100%;
+    padding: 30px 0 0 0;
+    overflow-y: scroll;
+}
+
+.nav-dashboard {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-dashboard .nav-dashboard-section-title {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.nav-dashboard .nav-dashboard-section-title h1 {
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+.nav-dashboard .nav-dashboard-section-title h2 {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--text-200);
+}
+
+.nav-dashboard-btn-shop {
+    font-size: 1rem;
+    font-weight: 300;
+    text-decoration: none;
+    color: var(--primary-300);
+    margin: 0 0 0 20px;
+    padding: 10px 20px;
+    border: 1px solid var(--primary-300);
+    background-color: var(--bg-100);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    transition: all .5s;
+}
+
+.nav-dashboard-btn-shop:hover {
+    background-color: var(--primary-100);
+}
+
+
+.aside-dashboard {
+    height: 100%;
+    border-right: 1px solid var(--text-200);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.aside-dashboard .aside-dashboard-section{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    margin: 0 0 60px
+}
+
+.aside-dashboard .aside-dashboard-section-avatar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0 30px 0;
+}
+
+.aside-dashboard .aside-dashboard-section-avatar .avatar-user {
+    width: 50px;
+    height 50px;
+    border-radius: 50%;
+}
+.aside-dashboard .aside-dashboard-section-avatar .name-user {
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 10px 0 5px 0;
+}
+.aside-dashboard .aside-dashboard-section-avatar .email-user {
+    font-size: .8rem;
+    font-weight: 300;
+    color: var(--text-200)
+}
+
+.aside-dashboard .aside-dashboard-section .title-aside {
+    font-size: 1.2rem;
+    font-weight: 400;
+    margin: 0 0 8px 20px;
+}
+
+.aside-dashboard .aside-dashboard-section .subtitle-aside {
+    font-size: 1rem;
+    font-weight: 300;
+    margin: 0 0 8px 20px;
+    color: var(--text-200)
+}
+
+.aside-dashboard .aside-dashboard-section .btn-aside {
+    font-size: 1rem;
+    font-weight: 300;
+    text-decoration: none;
+    color: var(--text-200);
+    padding: 15px 30px;
+    background-color: var(--bg-100);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    transition: all .5s;
+}
+
+.aside-dashboard .aside-dashboard-section .btn-aside .icon-svg {
+    padding: 10px;
+    background-color: var(--bg-300);
+    border-radius: 10px
+}
+
+.aside-dashboard .aside-dashboard-section .btn-aside:hover .icon-svg {
+    background-color: var(--primary-100) !important;
+    color: var(--primary-300) !important;
+}
+
+.aside-dashboard .aside-dashboard-section .btn-aside:hover {
+    color: var(--primary-300) !important;
+}
+
+.aside-dashboard .aside-dashboard-section .btn-logaut {
+    font-size: 1rem;
+    font-weight: 300;
+    text-decoration: none;
+    color: var(--accent-100);
+    margin: 0 0 0 20px;
+    padding: 10px 20px;
+    border: 1px solid var(--accent-100);
+    background-color: var(--bg-100);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    transition: all .5s;
+}
+
+.aside-dashboard .aside-dashboard-section .btn-logaut:hover {
+    background-color: var(--accent-200);
+}
+
+
+
+
+
+
+
+
+
+
+    a, .btn-link {
+        color: #0071c1;
+    }
+
 
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
@@ -37,8 +236,6 @@ a, .btn-link {
 }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
@@ -64,7 +261,7 @@ a, .btn-link {
 }
 
     .blazor-error-boundary::after {
-        content: "An error has occurred."
+        content: "A ocurrido un error."
     }
 
 .loading-progress {
@@ -84,7 +281,7 @@ a, .btn-link {
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: var(--primary-300);
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -97,11 +294,11 @@ a, .btn-link {
 }
 
     .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
+        content: var(--blazor-load-percentage-text, "Cargando...");
     }
 
 code {
-    color: #c02d76;
+    color: var(--primary-100;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {

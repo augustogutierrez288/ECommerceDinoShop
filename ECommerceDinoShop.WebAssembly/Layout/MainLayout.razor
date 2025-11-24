@@ -1,16 +1,34 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+﻿@using ECommerceDinoShop.WebAssembly.Components.Navbar
+@inherits LayoutComponentBase
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
+<section class="container-fluid bg-light">
+    <section class="row h-100 w-100">
+        <header class="col-12 w-100">
+            <BlazoredToasts />
+            <NavMenu/>
+        </header>
+        <main class="col-12 w-100">
             @Body
-        </article>
-    </main>
-</div>
+        </main>
+        <footer class="col-12 w-100">
+            <section class="d-flex justify-content-center align-items-center flex-wrap">
+                <article>
+                    <h4>Medios de pago</h4>
+
+                </article>
+                <article>
+                    <h4>Medios de envio</h4>
+
+                </article>
+                <article>
+                    <div>
+                        <h4>Nuestras redes sociales</h4>
+                    </div>
+                    <div>
+                        Contactos
+                    </div>
+                </article>
+            </section>
+        </footer>
+    </section>
+</section>

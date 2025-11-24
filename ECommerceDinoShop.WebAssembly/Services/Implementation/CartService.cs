@@ -1,9 +1,9 @@
 ﻿using Blazored.LocalStorage;
 using Blazored.Toast.Services;
 using ECommerceDinoShop.DTO;
-using ECommerceDinoShop.WebAssembly.Contract;
+using ECommerceDinoShop.WebAssembly.Services.Contract;
 
-namespace ECommerceDinoShop.WebAssembly.Implementation
+namespace ECommerceDinoShop.WebAssembly.Services.Implementation
 {
     public class CartService : ICartService
     {

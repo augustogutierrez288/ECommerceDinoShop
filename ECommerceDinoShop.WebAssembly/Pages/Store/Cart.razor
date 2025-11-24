@@ -1,0 +1,239 @@
+﻿@page "/cart"
+
+@inject ICartService _cartService
+@inject IOrderService _OrderService
+@inject IToastService _toastService
+@inject NavigationManager _navServicio
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+
+<div class="row mt-4">
+
+@*    INFORMACION DE LOS PRODUCTOS AGREGADOS EN EL CARRITO*@
+
+    <div class="col-sm-8">
+        <div class="card mb-3">
+
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm bg-light table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width:102px"></th>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th>Cantidad</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @if (list.Any())
+                            {
+                                foreach (var item in list)
+                                {
+                                    <tr>
+                                        <td valign="middle">
+                                            <img class="card-img-top" src="@item.Product.ImageUrl" style="width:100px">
+                                        </td>
+                                        <td valign="middle">@item.Product.Name</td>
+                                        <td valign="middle">@item.Price</td>
+                                        <td valign="middle" align="center">
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-danger" @onclick="(() =>Decrease(item.Product.IdProduct))">
+                                                    -
+                                                </button>
+                                                <input class="form-control" readonly="readonly" style="width:50px" @bind-value="item.Quantity" />
+                                                <button type="button" class="btn btn-success" @onclick="(() =>Increase(item.Product.IdProduct))">
+                                                    +
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td valign="middle">@item.Total</td>
+                                        <td valign="middle">
+                                            <button type="button" class="btn btn-danger" @onclick="(async () => await Delete(item.Product.IdProduct))">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16">
+                                                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+
+                                
+                            }else{
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="alert alert-warning" role="alert">
+                                           No hay productos en el carrito
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                           
+
+                        </tbody>
+                    </table>
+                </div>
+
+                
+            </div>
+
+         
+        </div>
+    </div>
+
+@*    SE MUESTRA LA INFORMACION DE TARJETA Y OPCION DE PAGAR*@
+    <div class="col-sm-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <EditForm Model="card" OnValidSubmit="ProcessPayment">
+                    <DataAnnotationsValidator></DataAnnotationsValidator>
+
+                    <div class="mb-2">
+                        <label class="form-label">Nombre Titular</label>
+                        <input type="text" class="form-control form-control-sm" placeholder="" @bind-value="card.Holder" disabled="@disabled">
+                        <ValidationMessage For="@(()=>card.Holder)" />
+                        
+                    </div>
+                    <div class="mb-2">
+                        <label  class="form-label">Numero Tarjeta</label>
+                        <input type="text" class="form-control form-control-sm" placeholder="##############" autocomplete="off" @bind-value="card.Number" disabled="@disabled">
+                        <ValidationMessage For="@(()=>card.Number)" />
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="mb-2">
+                                <label class="form-label">Vigencia</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="MM/YY" autocomplete="off" @bind-value="card.Validity" disabled="@disabled">
+                                <ValidationMessage For="@(()=>card.Validity)" />
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb-2">
+                                <label class="form-label">CVV</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="###" autocomplete="off" @bind-value="card.CVV" disabled="@disabled">
+                                <ValidationMessage For="@(()=>card.CVV)" />
+                            </div>
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between">
+                        <div>Total a pagar:</div>
+                        <div>S/. @(list.Sum(i => i.Total))</div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="d-grid gap-1">
+                            <button class="btn btn-outline-secondary float-end" type="submit" disabled="@disabled">Procesar pago</button>
+                        </div>
+                    </div>
+                </EditForm>
+
+                <AuthorizeView>
+                    <NotAuthorized>
+                        <div class="alert alert-danger mt-2" role="alert">
+                            Debe iniciar sesion para poder realizar la compra
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool disabled = true;
+    private List<CartDTO> list = new List<CartDTO>();
+    private decimal? totalToPay = 0;
+    private CardDTO card = new CardDTO();
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        list = await _cartService.ReturnCart();
+
+        var authState = await AuthenticationState;
+        if (authState.User.Identity.IsAuthenticated)
+            disabled = false;
+    }
+
+    private void Decrease(int id)
+    {
+        CartDTO item = list.First(p => p.Product.IdProduct == id);
+        decimal? finalPrice = (item.Product.SalePrice != 0 && item.Product.SalePrice < item.Product.Price) ? item.Product.SalePrice : item.Product.Price;
+        if(item.Quantity - 1 > 0)
+        {
+            item.Quantity--;
+            item.Total = item.Quantity * finalPrice;
+        }
+    }
+
+    private void Increase(int id)
+    {
+        CartDTO item = list.First(p => p.Product.IdProduct == id);
+        decimal? finalPrice = (item.Product.SalePrice != 0 && item.Product.SalePrice < item.Product.Price) ? item.Product.SalePrice : item.Product.Price;
+        item.Quantity++;
+        item.Total = item.Quantity * finalPrice;
+
+    }
+
+    private async Task Delete(int idProduct)
+    {
+        CartDTO product = list.First(p => p.Product.IdProduct == idProduct);
+        if(product != null)
+        {
+            list.Remove(product);
+            await _cartService.DeleteCart(idProduct);
+        }
+    }
+
+    private async Task ProcessPayment()
+    {
+        if(list.Count == 0)
+        {
+            _toastService.ShowWarning("No se encontraron productos");
+            return;
+        }
+
+        List<OrderDetailDTO> detail = new List<OrderDetailDTO>();
+
+        foreach(var item in list)
+        {
+            detail.Add(new OrderDetailDTO()
+            {
+                IdProduct = item.Product.IdProduct,
+                Quantity = item.Quantity,
+                Total = item.Total
+            });
+        }
+
+        var authState = await AuthenticationState;
+        string idUser = authState.User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).Single();
+
+        OrderDTO model = new OrderDTO()
+            {
+                IdUser = Convert.ToInt32(idUser),
+                Total = list.Sum(i => i.Total),
+                OrderDetails = detail
+            };
+
+        var response = await _OrderService.Register(model);
+
+        if (response.IsCorrect)
+        {
+            await _cartService.ClearCart();
+            _toastService.ShowSuccess("Venta registrada");
+            _navServicio.NavigateTo("/catalogo");
+        }
+        else
+        {
+            _toastService.ShowError(response.Message);
+        }
+    }
+}

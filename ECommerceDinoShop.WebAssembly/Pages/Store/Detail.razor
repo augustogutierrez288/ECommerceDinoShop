@@ -1,0 +1,104 @@
+﻿@page "/detalle/{Id:int}"
+
+@inject IProductService _productService;
+@inject ICartService  _cartService;
+
+<div class="container px-4 px-lg-5 my-5">
+
+
+    @if (productModel != null)
+    {
+        <div class="row gx-4 gx-lg-5 align-items-center">
+            <div class="col-md-6">
+                <img class="card-img-top border-dark border-1" src="@productModel.ImageUrl" style="width:100%;">
+            </div>
+            <div class="col-md-6">
+                <h1 class="display-5 fw-bolder">@productModel.Name</h1>
+                <div class="fs-5 mb-5">
+
+                    @if (productModel.SalePrice != 0 && productModel.SalePrice < productModel.Price)
+                    {
+                        <span class="text-danger text-decoration-line-through">$ @productModel.Price</span>
+                        <span>$@productModel.SalePrice</span>
+                    }
+                    else
+                    {
+                        <span>$@productModel.Price</span>
+                    }
+
+                </div>
+                <p class="lead">@productModel.Description</p>
+                <p class="leal">Cantidad en stock: @productModel.Quantity</p>
+                <div class="d-flex">
+                    <input class="form-control text-center me-3" type="number" min="1" style="width:60px" @bind-value="quantity">
+                    <button class="btn btn-outline-dark flex-shrink-0 me-3" type="button" @onclick="(async () => await AddCart(productModel))">
+
+                        @if (hook)
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart-fill" viewBox="0 0 16 16">
+                                <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart-check-fill" viewBox="0 0 16 16">
+                                <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-1.646-7.646-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708" />
+                            </svg>
+                        }
+
+                        Agregar al carrito
+                    </button>
+                    <a class="btn btn-outline-dark flex-shrink-0" href="/catalogo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-left" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M6 12.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v2a.5.5 0 0 1-1 0v-2A1.5 1.5 0 0 1 6.5 2h8A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 5 12.5v-2a.5.5 0 0 1 1 0z" />
+                            <path fill-rule="evenodd" d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708z" />
+                        </svg>
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center">
+            <strong role="status">Cargando...</strong>
+            <div class="spinner-border ms-auto" aria-hidden="true"></div>
+        </div>
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private bool hook = true;
+    private ProductDTO? productModel = null;
+    private int quantity = 1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var response = await _productService.Obtain(Id);
+        if (response.IsCorrect)
+        {
+            productModel = (ProductDTO)response.Result!;
+        }
+    }
+
+    private async Task AddCart(ProductDTO model)
+    {
+        decimal? finalPrice = (model.SalePrice != 0 && model.SalePrice < model.Price) ? model.SalePrice : model.Price;
+
+        CartDTO carrito = new CartDTO()
+        {
+            Product = model,
+            Quantity = quantity,
+            Price = finalPrice,
+            Total = Convert.ToDecimal(quantity) * finalPrice
+        };
+
+        await _cartService.AddCart(carrito);
+
+        hook = false;
+    }
+}
