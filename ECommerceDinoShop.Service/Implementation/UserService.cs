@@ -129,6 +129,7 @@ namespace ECommerceDinoShop.Service.Implementation
                     fromDbModel.FullName = model.FullName;
                     fromDbModel.Email = model.Email;
                     fromDbModel.Password = model.Password;
+                    fromDbModel.Role = model.Role;
 
                     var response = await _modelRepository.Update(fromDbModel);
 

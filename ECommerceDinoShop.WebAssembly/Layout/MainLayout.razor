@@ -1,34 +1,19 @@
 ﻿@using ECommerceDinoShop.WebAssembly.Components.Navbar
+@using ECommerceDinoShop.WebAssembly.Components.Footer
 @inherits LayoutComponentBase
 
-<section class="container-fluid bg-light">
-    <section class="row h-100 w-100">
+<section class="container-fluid d-flex flex-column justify-content-center align-items-center ">
+    <section class="row h-100 w-100 d-flex flex-column justify-content-center align-items-center">
+
         <header class="col-12 w-100">
             <BlazoredToasts />
             <NavMenu/>
         </header>
+
         <main class="col-12 w-100">
             @Body
         </main>
-        <footer class="col-12 w-100">
-            <section class="d-flex justify-content-center align-items-center flex-wrap">
-                <article>
-                    <h4>Medios de pago</h4>
 
-                </article>
-                <article>
-                    <h4>Medios de envio</h4>
-
-                </article>
-                <article>
-                    <div>
-                        <h4>Nuestras redes sociales</h4>
-                    </div>
-                    <div>
-                        Contactos
-                    </div>
-                </article>
-            </section>
-        </footer>
+        <FooterStore/>
     </section>
 </section>

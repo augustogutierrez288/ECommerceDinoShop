@@ -1,18 +1,19 @@
 ﻿@using ECommerceDinoShop.WebAssembly.Components.Aside
 @using ECommerceDinoShop.WebAssembly.Components.Navbar
+@using ECommerceDinoShop.WebAssembly.Components.Footer
 @inherits LayoutComponentBase
 
 <BlazoredToasts />
 
-<section class="container-fluid container-dashboard">
-    <section class="row w-100 h-100">
+<section class="container-fluid bg-dark pe-0" style="width: 100vw; height: 100vh;">
+    <section class="row w-100 h-100 pe-0">
         <AsideDashboard/>
-        <main class="col-10 main-dashboard">
-            <NavDashboard/>
-            <section class="main-dashboard-section">
+        <main class="col-10 overflow-y-scroll border border-1 border-light rounded bg-light" style="height: 95%">
+            <section class="d-flex flex-column justify-content-start align-items-start h-100">
                 @Body
             </section>
         </main>
+        <FooterDashboard/>
     </section>
 </section>
 

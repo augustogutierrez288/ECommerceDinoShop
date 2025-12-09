@@ -2,36 +2,47 @@
 
 @inject IProductService _productService;
 @inject ICartService  _cartService;
+@inject ICategoryService _categoryService;
 
-<div class="container px-4 px-lg-5 my-5">
+<section class="container-fluid px-4 px-lg-5 my-5">
 
 
     @if (productModel != null)
     {
-        <div class="row gx-4 gx-lg-5 align-items-center">
-            <div class="col-md-6">
-                <img class="card-img-top border-dark border-1" src="@productModel.ImageUrl" style="width:100%;">
-            </div>
+        <article class="row gx-4 gx-lg-5 align-items-center">
+            <figure class="col-md-6">
+                <img class="card-img-top object-fit-cover" src="@productModel.ImageUrl" style="width:75%;">
+            </figure>
             <div class="col-md-6">
                 <h1 class="display-5 fw-bolder">@productModel.Name</h1>
-                <div class="fs-5 mb-5">
+                <div class="fs-5 mt-4 mb-4">
 
                     @if (productModel.SalePrice != 0 && productModel.SalePrice < productModel.Price)
                     {
-                        <span class="text-danger text-decoration-line-through">$ @productModel.Price</span>
-                        <span>$@productModel.SalePrice</span>
+                        <div class="w-100 d-flex justify-content-start align-items-center ">
+                            <p class="text-danger fw-light text-decoration-line-through mb-0 me-3">$@Convert.ToInt32(productModel.Price)</p>
+
+                            <p class="text-dark fw-medium mb-0">
+                                $@Convert.ToInt32(productModel.SalePrice)
+                            </p>
+                        </div>
                     }
                     else
                     {
-                        <span>$@productModel.Price</span>
+                        <p class="text-dark mb-0 fw-medium">$@Convert.ToInt32(productModel.Price)</p>
                     }
 
                 </div>
+
                 <p class="lead">@productModel.Description</p>
+
+                <p class="leal">Categoria: @productModel.IdCategoryNavigation.Name</p>
                 <p class="leal">Cantidad en stock: @productModel.Quantity</p>
+
                 <div class="d-flex">
                     <input class="form-control text-center me-3" type="number" min="1" style="width:60px" @bind-value="quantity">
-                    <button class="btn btn-outline-dark flex-shrink-0 me-3" type="button" @onclick="(async () => await AddCart(productModel))">
+
+                    <button class="btn btn-primary flex-shrink-0 me-3" type="button" @onclick="(async () => await AddCart(productModel))">
 
                         @if (hook)
                         {
@@ -48,7 +59,8 @@
 
                         Agregar al carrito
                     </button>
-                    <a class="btn btn-outline-dark flex-shrink-0" href="/catalogo">
+
+                    <a class="btn btn-outline-danger flex-shrink-0" href="/catalogo">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-left" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M6 12.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v2a.5.5 0 0 1-1 0v-2A1.5 1.5 0 0 1 6.5 2h8A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 5 12.5v-2a.5.5 0 0 1 1 0z" />
                             <path fill-rule="evenodd" d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708z" />
@@ -57,7 +69,7 @@
                     </a>
                 </div>
             </div>
-        </div>
+        </article>
     }
     else
     {
@@ -67,7 +79,74 @@
         </div>
     }
 
-</div>
+</section>
+
+<section class="container-fluid px-4 px-lg-5 my-5">
+    <section class="row w-100">
+        <section  class="text-start col-12">
+            <p class="fw-semibold fs-4 mb-2">Productos que te pueden interesar</p>
+            <p class="fw-light fs-5 mb-4">Nuestros clientes tambien eligieron los siguientes productos</p>
+        </section>  
+
+        <section class="col-12 d-flex justify-content-start align-items-center flex-wrap gap-3">
+            @if (listProduct != null)
+            {
+                @foreach (var item in listProduct)
+                {
+                    <article class="card d-flex flex-column justify-content-center align-items-center col-5 col-sm-5 col-md-4 col-lg-2 col-xl-2 col-xxl-2 " style=" height: 380px !important ;">
+                        <!-- Sale badge-->
+                        @if (DateTime.Now < item.CreatedAt.Value.AddDays(30))
+                        {
+                            <div class="badge bg-primary text-white position-absolute" style="top: 0.5rem; right: 0.5rem">Nuevo</div>
+                        }
+
+                        <!-- Product image-->
+                        <figure class="card-img-top border-light border-1 d-flex justify-content-center align-items-center" style="width: 100%; height: 170px;">
+                            <img class="w-100 h-100 object-fit-cover" src="@item.ImageUrl">
+                        </figure>
+                        <!-- Product details-->
+                        <main class="card-body p-3">
+                            <div class="text-start">
+                                <!-- Product name-->
+                                <h5 class="fs-6 fw-semibold mb-3">@item.Name</h5>
+                                <!-- Product price-->
+                                @if (item.SalePrice != 0 && item.SalePrice < item.Price)
+                                {
+                                    <div class="w-100 d-flex justify-content-start align-items-center ">
+                                        <p class="text-danger fs-5 fw-light text-decoration-line-through mb-0 me-2">$@Convert.ToInt32(item.Price)</p>
+
+                                        <p class="text-dark fs-5 fw-medium mb-0">
+                                            $@Convert.ToInt32(item.SalePrice)
+                                        </p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-dark mb-0 fs-5 fw-medium">$@Convert.ToInt32(item.Price)</p>
+                                }
+                            </div>
+                        </main>
+                        <!-- Product actions-->
+                        <footer class="card-footer w-100 ps-3 pb-3 pe-3 pt-0 border-top-0 bg-transparent">
+                            <div class="text-start">
+                                <a class="btn btn-outline-primary mt-auto" href="/detalle/@item.IdProduct">Ver más</a>
+                            </div>
+                        </footer>
+                    </article>
+                }
+            }
+            else
+            {
+                <div class="d-flex align-items-center">
+                    <strong role="status">Cargando...</strong>
+                    <div class="spinner-border ms-auto" aria-hidden="true"></div>
+                </div>
+            }
+        </section>
+        
+
+    </section>
+</section>
 
 @code {
     [Parameter]
@@ -75,7 +154,8 @@
     private bool hook = true;
     private ProductDTO? productModel = null;
     private int quantity = 1;
-
+    private List<ProductDTO>? listProduct = null;
+    
     protected override async Task OnParametersSetAsync()
     {
         var response = await _productService.Obtain(Id);
@@ -83,6 +163,8 @@
         {
             productModel = (ProductDTO)response.Result!;
         }
+
+        await ObtainCatalog();
     }
 
     private async Task AddCart(ProductDTO model)
@@ -101,4 +183,20 @@
 
         hook = false;
     }
+
+    private async Task ObtainCatalog()
+    {
+
+        var response = await _productService.Catalog(productModel.IdCategoryNavigation.Name,string.Empty);
+        if (response.IsCorrect)
+        {
+            listProduct = (List<ProductDTO>)response.Result!;
+        }
+        else
+        {
+            listProduct = new List<ProductDTO>();
+        }
+    }
+
+    
 }

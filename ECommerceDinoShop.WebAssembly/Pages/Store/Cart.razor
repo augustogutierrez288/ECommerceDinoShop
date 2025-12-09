@@ -18,7 +18,7 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm bg-light table-bordered">
-                        <thead class="table-dark">
+                        <thead class="table-primary">
                             <tr>
                                 <th style="width:102px"></th>
                                 <th>Producto</th>
@@ -229,7 +229,7 @@
         {
             await _cartService.ClearCart();
             _toastService.ShowSuccess("Venta registrada");
-            _navServicio.NavigateTo("/catalogo");
+            _navServicio.NavigateTo("/");
         }
         else
         {

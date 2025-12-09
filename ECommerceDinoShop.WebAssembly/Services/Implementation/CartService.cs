@@ -85,8 +85,13 @@ namespace ECommerceDinoShop.WebAssembly.Services.Implementation
 
         public int QuantityProducts()
         {
-            var cart = _syncLocalStorageService.GetItem<List<CartDTO>>("carrito");
-            return cart == null ? 0 : cart.Count();
+            var cart = _syncLocalStorageService.GetItem<List<CartDTO>>("cart");
+
+            if (cart == null || !cart.Any())
+                return 0;
+
+            // Sumar las cantidades de cada carrito; Quantity es nullable, se usa GetValueOrDefault()
+            return cart.Sum(c => c.Quantity.GetValueOrDefault());
         }
 
         public async Task<List<CartDTO>> ReturnCart()

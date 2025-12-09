@@ -23,7 +23,7 @@ namespace ECommerceDinoShop.Service.Implementation
             try
             {
                 var dbModel = _mapper.Map<Order>(model);
-                var orderGenerated = await _modelRepository.Create(dbModel);
+                var orderGenerated = await _modelRepository.Register(dbModel);
 
                 if (orderGenerated.IdOrder == 0)
                     throw new TaskCanceledException("No se puede registrar venta");

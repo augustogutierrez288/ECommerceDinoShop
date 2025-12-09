@@ -5,12 +5,18 @@
 
 @attribute [Authorize(Roles = "Administrador")];
 
-<div class="d-flex justify-content-between align-items-center gap-3">
 
-    <div class="card text-bg-primary mb-3" style="max-width: 18rem;">
-      <div class="card-header">Ventas</div>
-      <div class="card-body">
-        <h5 class="card-title">Cantidad de ventas</h5>
+<h2 class="fs-3 fw-semibold text-start mt-3 mb-4">
+    Dashboard<br />
+    Panel administrativo
+</h2>
+
+<section class="d-flex justify-content-between align-items-center gap-3 mt-1">
+
+    <article class="card text-bg-primary mb-3" style="max-width: 15rem;">
+      <header class="card-header">Ventas</header>
+      <main class="card-body">
+        <h5 class="card-title fs-6 fw-semibold">Cantidad de ventas</h5>
         @if (loading)
             {
                 <div class="spinner-border spinner-border-sm" role="status">
@@ -24,13 +30,13 @@
             {
                 <p class="card-text">@dashboard.TotalOrders</p>
             }
-      </div>
-    </div>
+      </main>
+    </article>
 
-    <div class="card text-bg-success mb-3" style="max-width: 18rem;">
-      <div class="card-header">Venta bruta</div>
-      <div class="card-body">
-        <h5 class="card-title">Ingresos de ventas brutas</h5>
+    <article class="card text-bg-success mb-3" style="max-width: 15rem;">
+      <header class="card-header">Venta bruta</header>
+      <main class="card-body">
+        <h5 class="card-title fs-6 fw-semibold">Ingresos por ventas</h5>
             @if (loading)
             {
                 <div class="spinner-border spinner-border-sm" role="status">
@@ -44,13 +50,13 @@
             {
                 <p class="card-text">$@dashboard.TotalRevenue</p>
             }
-      </div>
-    </div>
+      </main>
+    </article>
 
-    <div class="card text-bg-danger mb-3" style="max-width: 18rem;">
-      <div class="card-header">Productos</div>
-      <div class="card-body">
-        <h5 class="card-title">Productos en stock</h5>
+    <article class="card text-bg-danger mb-3" style="max-width: 15rem;">
+      <header class="card-header">Productos</header>
+      <main class="card-body">
+        <h5 class="card-title fs-6 fw-semibold">Productos en stock</h5>
         @if (loading)
             {
                 <div class="spinner-border spinner-border-sm" role="status">
@@ -64,13 +70,13 @@
             {
                 <p class="card-text">@dashboard.TotalProducts</p>
             }
-      </div>
-    </div>
+      </main>
+    </article>
 
-    <div class="card text-bg-warning mb-3" style="max-width: 18rem;">
-      <div class="card-header">Clientes</div>
-      <div class="card-body">
-        <h5 class="card-title">Total de clientes registrados</h5>
+    <article class="card text-bg-warning mb-3" style="max-width: 15rem;">
+      <header class="card-header">Clientes</header>
+      <main class="card-body">
+        <h5 class="card-title fs-6 fw-semibold">Total de clientes</h5>
         @if (loading)
             {
                 <div class="spinner-border spinner-border-sm" role="status">
@@ -84,10 +90,10 @@
             {
                 <p class="card-text">@dashboard.TotalCustomers</p>
             }
-      </div>
-    </div>
+      </main>
+    </article>
 
-</div>
+</section>
 
 @code {
     private DashboardDTO dashboard = new DashboardDTO();
@@ -102,5 +108,4 @@
             loading = false;
         }
     }
-
 }
