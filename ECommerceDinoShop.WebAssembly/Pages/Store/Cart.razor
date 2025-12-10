@@ -1,10 +1,14 @@
 ﻿@page "/cart"
+@page "/cart?payment=approved"
+@page "/cart?payment=failed"
+@page "/cart?payment=pending"
 
 @inject ICartService _cartService
 @inject IOrderService _OrderService
 @inject IToastService _toastService
 @inject NavigationManager _navServicio
 
+@using ECommerceDinoShop.DTO
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 
@@ -89,7 +93,7 @@
     <div class="col-sm-4">
         <div class="card mb-3">
             <div class="card-body">
-                <EditForm Model="card" OnValidSubmit="ProcessPayment">
+                <EditForm Model="card" OnValidSubmit="PayWithMercadoPago">
                     <DataAnnotationsValidator></DataAnnotationsValidator>
 
                     <div class="mb-2">
@@ -190,6 +194,107 @@
         {
             list.Remove(product);
             await _cartService.DeleteCart(idProduct);
+        }
+    }
+
+    private async Task PayWithMercadoPago()
+    {
+        if (list.Count == 0)
+        {
+            _toastService.ShowWarning("No se encontraron productos");
+            return;
+        }
+
+        var authState = await AuthenticationState;
+        var user = authState.User;
+
+        var paymentDto = new SendPaymentDTO
+        {
+            Email = user.Claims.Where(c => c.Type == ClaimTypes.Email).Select(c => c.Value).Single(),
+            IdentificationType = "DNI", // o lo que corresponda
+            IdentificationNumber = "12345678", // o lo que corresponda
+            StreetName = "Calle Ejemplo",
+            StreetNumber = "123",
+            ZipCode = "1000",
+            PhoneAreaCode = "11",
+            PhoneNumber = "12345678",
+            Cart = list, // Tu lista de CartDTO
+
+            // Miembros requeridos por CS9035
+            PersonType = "individual", // Ajusta según tu lógica de negocio
+            BanksList = "", // O la lista de bancos correspondiente
+            TransactionAmount = list.Sum(i => i.Total).ToString() ?? "", // Suma total del carrito
+            Description = "Compra en DinoShop", // Ajusta según tu lógica
+            Neighborhood = "Barrio Ejemplo", // Ajusta según tu lógica
+            City = "Ciudad Ejemplo", // Ajusta según tu lógica
+            FederalUnit = "Unidad Federal Ejemplo" // Ajusta según tu lógica
+        };
+
+        var url = await _cartService.PayProductsAsync(paymentDto);
+
+        if (!string.IsNullOrEmpty(url))
+        {
+            _navServicio.NavigateTo(url, true); // Redirige a MercadoPago
+        }
+        else
+        {
+            _toastService.ShowError("No se pudo iniciar el pago");
+        }
+    }
+
+
+    // ... código existente
+
+    protected override async Task OnInitializedAsync()
+    {
+        list = await _cartService.ReturnCart();
+
+        var authState = await AuthenticationState;
+        if (authState.User.Identity.IsAuthenticated)
+            disabled = false;
+
+        // Detectar parámetro de pago aprobado
+        var uri = new Uri(_navServicio.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("payment", out var paymentStatus) && paymentStatus == "approved")
+        {
+            await RegisterOrderAndClearCart();
+        }
+    }
+
+    private async Task RegisterOrderAndClearCart()
+    {
+        if (list.Count == 0)
+            return;
+
+        List<OrderDetailDTO> detail = list.Select(item => new OrderDetailDTO
+        {
+            IdProduct = item.Product.IdProduct,
+            Quantity = item.Quantity,
+            Total = item.Total
+        }).ToList();
+
+        var authState = await AuthenticationState;
+        string idUser = authState.User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).Single();
+
+        OrderDTO model = new OrderDTO
+        {
+            IdUser = Convert.ToInt32(idUser),
+            Total = list.Sum(i => i.Total),
+            OrderDetails = detail
+        };
+
+        var response = await _OrderService.Register(model);
+
+        if (response.IsCorrect)
+        {
+            await _cartService.ClearCart();
+            _toastService.ShowSuccess("Venta registrada");
+            _navServicio.NavigateTo("/");
+        }
+        else
+        {
+            _toastService.ShowError(response.Message);
         }
     }
 

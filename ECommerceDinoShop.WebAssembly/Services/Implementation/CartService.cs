@@ -2,6 +2,7 @@
 using Blazored.Toast.Services;
 using ECommerceDinoShop.DTO;
 using ECommerceDinoShop.WebAssembly.Services.Contract;
+using System.Net.Http.Json;
 
 namespace ECommerceDinoShop.WebAssembly.Services.Implementation
 {
@@ -10,16 +11,19 @@ namespace ECommerceDinoShop.WebAssembly.Services.Implementation
         private ILocalStorageService _localStorageService;
         private ISyncLocalStorageService _syncLocalStorageService;
         private IToastService _toastService;
+        private readonly HttpClient _httpClient;
 
         public CartService(
             ILocalStorageService localStorageService,
             ISyncLocalStorageService syncLocalStorageService,
-            IToastService toastService
+            IToastService toastService,
+            HttpClient httpClient
             )
         {
             _localStorageService = localStorageService;
             _syncLocalStorageService = syncLocalStorageService;
             _toastService = toastService;
+            _httpClient = httpClient;
         }
 
         public event Action ShowItems;
@@ -102,6 +106,22 @@ namespace ECommerceDinoShop.WebAssembly.Services.Implementation
                 cart = new List<CartDTO>();
 
             return cart;
+        }
+
+        public async Task<string?> PayProductsAsync(SendPaymentDTO model)
+        {
+            var response = await _httpClient.PostAsJsonAsync("Cart", model);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<PaymentUrlResponse>();
+                return result?.url;
+            }
+            return null;
+        }
+
+        public class PaymentUrlResponse
+        {
+            public string url { get; set; }
         }
     }
 }
