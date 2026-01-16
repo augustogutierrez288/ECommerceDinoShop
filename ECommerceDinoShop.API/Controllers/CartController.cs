@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ECommerceDinoShop.DTO;
-using System.Diagnostics;
-using System.Reflection;
 using MercadoPago.Client.Common;
 using MercadoPago.Client.Preference;
 using MercadoPago.Config;
@@ -31,15 +28,13 @@ namespace ECommerceDinoShop.API.Controllers
                 model.IdentificationType = "DNI";
             }
 
-            var accessToken = ObtainAccessToken();
-            
-            var publicKey = ObtainPublicKey();
+            string accessToken = ObtainAccessToken();
 
             MercadoPagoConfig.AccessToken = accessToken;
             
 
             // Aquí deberías recibir la lista de productos desde el frontend
-            if (model.Cart == null || !model.Cart.Any())
+            if (model.Cart == null || model.Cart.Count == 0)
             {
                 return BadRequest("El carrito está vacío.");
             }
@@ -50,21 +45,27 @@ namespace ECommerceDinoShop.API.Controllers
             {
                 items.Add(new PreferenceItemRequest
                 {
-                    Id = item.Product.IdProduct.ToString(),
+                   
                     Title = item.Product.Name,
-                    CurrencyId = "ARS",
-                    PictureUrl = item.Product.ImageUrl,
-                    Description = item.Product.Description,
-                    CategoryId = item.Product.IdCategory.ToString(),
                     Quantity = item.Quantity,
+                    CurrencyId = "ARS",
                     UnitPrice = (item.Product.SalePrice != 0 && item.Product.SalePrice < item.Product.Price) ? item.Product.SalePrice : item.Product.Price
+
+                    //Id = item.Product.IdProduct.ToString(),
+                    //Title = item.Product.Name,
+                    //CurrencyId = "ARS",
+                    //PictureUrl = item.Product.ImageUrl,
+                    //Description = item.Product.Description,
+                    //CategoryId = item.Product.IdCategory.ToString(),
+                    //Quantity = item.Quantity,
+                    //UnitPrice = (item.Product.SalePrice != 0 && item.Product.SalePrice < item.Product.Price) ? item.Product.SalePrice : item.Product.Price
                 });
             }
             
 
             var request = new PreferenceRequest
             {
-                Items = items,
+                Items = items, //OK
 
                 //*Aqui estara la informacion del usuario
                 Payer = new PreferencePayerRequest
@@ -92,11 +93,10 @@ namespace ECommerceDinoShop.API.Controllers
 
                 BackUrls = new PreferenceBackUrlsRequest
                 {
-                    Success = "https://localhost:7183/cart?payment=approved",
-                    Failure = "https://localhost:7183/cart?payment=failed",
-                    Pending = "https://localhost:7183/cart?payment=pending"
-                },
-
+                    Success = "https://localhost:7183/cart/aprobado",
+                    Failure = "https://localhost:7183/cart/fail",
+                    Pending = "https://localhost:7183/cart/pendiente"
+                }, //OK
                 AutoReturn = "approved",
 
                 PaymentMethods = new PreferencePaymentMethodsRequest
@@ -105,6 +105,7 @@ namespace ECommerceDinoShop.API.Controllers
                     ExcludedPaymentTypes = [],
                     Installments = 24
                 },
+
                 StatementDescriptor = "Mayorista Dino Shop",
                 ExternalReference = $"Referencia_{Guid.NewGuid().ToString()}",
                 Expires = true,
@@ -117,28 +118,10 @@ namespace ECommerceDinoShop.API.Controllers
             var client = new PreferenceClient();
             Preference preference = await client.CreateAsync(request);
 
-            // Devuelve la URL al frontend
-            return Ok(new { url = preference.SandboxInitPoint });
+            // Devuelve la URL y el ID de la preferencia al frontend
+            return Ok(new { url = preference.SandboxInitPoint, preferenceId = preference.Id });
         }
 
-        [HttpGet("Success")]
-        public async Task<IActionResult> Success([FromQuery] PaymentResponseDTO paymentResponse)
-        {
-            return new JsonResult(paymentResponse);
-        }
-
-        [HttpGet("Failure")]
-        public async Task<IActionResult> Failure([FromQuery] PaymentResponseDTO paymentResponse)
-        {
-            return new JsonResult(paymentResponse);
-        }
-
-
-        //[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        //public IActionResult Error()
-        //{
-        //    return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        //}
 
         #region Data of setting for mercadopago
 

@@ -132,6 +132,7 @@ namespace ECommerceDinoShop.Service.Implementation
                     fromDbModel.Name = model.Name;
                     fromDbModel.Description = model.Description;
                     fromDbModel.IdCategory = model.IdCategory;
+                    fromDbModel.Quantity = model.Quantity;
                     fromDbModel.Price = model.Price;
                     fromDbModel.SalePrice = model.SalePrice;
                     fromDbModel.ImageUrl = model.ImageUrl;

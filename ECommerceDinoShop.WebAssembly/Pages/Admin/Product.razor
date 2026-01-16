@@ -128,7 +128,7 @@
     async Task OnFileChange(InputFileChangeEventArgs e)
     {
         FileInfo fileInfo = new FileInfo(e.File.Name);
-        if (fileInfo.Extension.ToLower().Contains(".jpg") || fileInfo.Extension.ToLower().Contains(".png") || fileInfo.Extension.ToLower().Contains(".webp"))
+        if (fileInfo.Extension.ToLower().Contains(".jpg") || fileInfo.Extension.ToLower().Contains(".png") || fileInfo.Extension.ToLower().Contains(".webp") || fileInfo.Extension.ToLower().Contains(".jpeg"))
         {
             var format = $"image/{fileInfo.Extension.Replace(".", "")}";
             var resizeImage = await e.File.RequestImageFileAsync(format, 450, 300);

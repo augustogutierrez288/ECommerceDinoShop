@@ -6,8 +6,6 @@ using ECommerceDinoShop.Service.Implementation;
 using ECommerceDinoShop.Utilities;
 using Microsoft.EntityFrameworkCore;
 
-
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

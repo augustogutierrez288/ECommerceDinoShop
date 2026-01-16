@@ -1,7 +1,4 @@
 ﻿@page "/cart"
-@page "/cart?payment=approved"
-@page "/cart?payment=failed"
-@page "/cart?payment=pending"
 
 @inject ICartService _cartService
 @inject IOrderService _OrderService
@@ -22,7 +19,7 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm bg-light table-bordered">
-                        <thead class="table-primary">
+                        <thead class="table-dark">
                             <tr>
                                 <th style="width:102px"></th>
                                 <th>Producto</th>
@@ -197,6 +194,10 @@
         }
     }
 
+
+
+    //Metodos para pagar y finalizar proceso de compra.
+
     private async Task PayWithMercadoPago()
     {
         if (list.Count == 0)
@@ -242,61 +243,6 @@
         }
     }
 
-
-    // ... código existente
-
-    protected override async Task OnInitializedAsync()
-    {
-        list = await _cartService.ReturnCart();
-
-        var authState = await AuthenticationState;
-        if (authState.User.Identity.IsAuthenticated)
-            disabled = false;
-
-        // Detectar parámetro de pago aprobado
-        var uri = new Uri(_navServicio.Uri);
-        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
-        if (query.TryGetValue("payment", out var paymentStatus) && paymentStatus == "approved")
-        {
-            await RegisterOrderAndClearCart();
-        }
-    }
-
-    private async Task RegisterOrderAndClearCart()
-    {
-        if (list.Count == 0)
-            return;
-
-        List<OrderDetailDTO> detail = list.Select(item => new OrderDetailDTO
-        {
-            IdProduct = item.Product.IdProduct,
-            Quantity = item.Quantity,
-            Total = item.Total
-        }).ToList();
-
-        var authState = await AuthenticationState;
-        string idUser = authState.User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).Single();
-
-        OrderDTO model = new OrderDTO
-        {
-            IdUser = Convert.ToInt32(idUser),
-            Total = list.Sum(i => i.Total),
-            OrderDetails = detail
-        };
-
-        var response = await _OrderService.Register(model);
-
-        if (response.IsCorrect)
-        {
-            await _cartService.ClearCart();
-            _toastService.ShowSuccess("Venta registrada");
-            _navServicio.NavigateTo("/");
-        }
-        else
-        {
-            _toastService.ShowError(response.Message);
-        }
-    }
 
     private async Task ProcessPayment()
     {
