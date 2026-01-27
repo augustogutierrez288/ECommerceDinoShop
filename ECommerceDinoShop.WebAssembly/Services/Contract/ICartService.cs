@@ -11,6 +11,5 @@ namespace ECommerceDinoShop.WebAssembly.Services.Contract
         Task DeleteCart(int idProduct);
         Task<List<CartDTO>> ReturnCart();
         Task ClearCart();
-        Task<string?> PayProductsAsync(SendPaymentDTO model);
     }
 }

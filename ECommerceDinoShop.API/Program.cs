@@ -1,10 +1,12 @@
-using ECommerceDinoShop.Repository; //Para poder acceder a la cadena de conexion con la DB
+using ECommerceDinoShop.Repository;
 using ECommerceDinoShop.Repository.Contract;
 using ECommerceDinoShop.Repository.Implementation;
 using ECommerceDinoShop.Service.Contract;
 using ECommerceDinoShop.Service.Implementation;
 using ECommerceDinoShop.Utilities;
 using Microsoft.EntityFrameworkCore;
+using MercadoPago.Config;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//Add MercadoPago Configuration
+MercadoPagoConfig.AccessToken = builder.Configuration.GetValue<string>("MercadoPago:AccessToken");
 
 //Connection DB
 builder.Services.AddDbContext<DbdinoShopContext>(options =>
@@ -33,7 +38,6 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-//builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 //New policy cors

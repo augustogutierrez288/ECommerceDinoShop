@@ -2,7 +2,7 @@
 
 namespace ECommerceDinoShop.Repository.Contract
 {
-    public interface IGenericRepository<TModel> where TModel : class //Aqui digo que la interfaz recibe una entidad de tipo clase
+    public interface IGenericRepository<TModel> where TModel : class
     {
         IQueryable<TModel> Consult(Expression<Func<TModel, bool>>? filter = null);
         Task<TModel> Create(TModel model);

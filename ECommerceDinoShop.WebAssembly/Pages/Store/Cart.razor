@@ -1,21 +1,21 @@
 ﻿@page "/cart"
 
-@inject ICartService _cartService
-@inject IOrderService _OrderService
-@inject IToastService _toastService
-@inject NavigationManager _navServicio
-
 @using ECommerceDinoShop.DTO
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+@using Microsoft.JSInterop 
+
+@inject ICartService _cartService
+@inject IToastService _toastService
+@inject NavigationManager _navServicio
+@inject HttpClient _http
+@inject IJSRuntime _js
 
 <div class="row mt-4">
 
-@*    INFORMACION DE LOS PRODUCTOS AGREGADOS EN EL CARRITO*@
-
+    @* INFORMACION DE LOS PRODUCTOS (IZQUIERDA) - MANTENIDA IGUAL *@
     <div class="col-sm-8">
         <div class="card mb-3">
-
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm bg-light table-bordered">
@@ -30,7 +30,6 @@
                             </tr>
                         </thead>
                         <tbody>
-
                             @if (list.Any())
                             {
                                 foreach (var item in list)
@@ -40,13 +39,13 @@
                                             <img class="card-img-top" src="@item.Product.ImageUrl" style="width:100px">
                                         </td>
                                         <td valign="middle">@item.Product.Name</td>
-                                        <td valign="middle">@item.Price</td>
+                                        <td valign="middle">@item.Product.Price</td>
                                         <td valign="middle" align="center">
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-outline-danger" @onclick="(() =>Decrease(item.Product.IdProduct))">
                                                     -
                                                 </button>
-                                                <input class="form-control" readonly="readonly" style="width:50px" @bind-value="item.Quantity" />
+                                                <input class="form-control" readonly="readonly" style="width:50px" value="@item.Quantity" />
                                                 <button type="button" class="btn btn-success" @onclick="(() =>Increase(item.Product.IdProduct))">
                                                     +
                                                 </button>
@@ -62,85 +61,159 @@
                                         </td>
                                     </tr>
                                 }
-
-                                
-                            }else{
+                            }
+                            else
+                            {
                                 <tr>
                                     <td colspan="6">
                                         <div class="alert alert-warning" role="alert">
-                                           No hay productos en el carrito
+                                            No hay productos en el carrito
                                         </div>
                                     </td>
                                 </tr>
                             }
-                           
-
                         </tbody>
                     </table>
                 </div>
-
-                
             </div>
-
-         
         </div>
     </div>
 
-@*    SE MUESTRA LA INFORMACION DE TARJETA Y OPCION DE PAGAR*@
+    @* FORMULARIO DE PAGO MERCADO PAGO (DERECHA) - ACTUALIZADO *@
     <div class="col-sm-4">
         <div class="card mb-3">
-            <div class="card-body">
-                <EditForm Model="card" OnValidSubmit="PayWithMercadoPago">
-                    <DataAnnotationsValidator></DataAnnotationsValidator>
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Datos de Facturación</h5>
+            </div>
+            <div class="card-body p-4">
+                <EditForm Model="paymentModel" OnValidSubmit="ProcessPaymentWithMercadoPago">
+                    <DataAnnotationsValidator />
 
-                    <div class="mb-2">
-                        <label class="form-label">Nombre Titular</label>
-                        <input type="text" class="form-control form-control-sm" placeholder="" @bind-value="card.Holder" disabled="@disabled">
-                        <ValidationMessage For="@(()=>card.Holder)" />
-                        
+                    @* SECCIÓN 1: IDENTIDAD *@
+                    <h6 class="text-secondary border-bottom pb-2 mb-3">
+                        <i class="bi bi-person-badge me-2"></i>Datos Personales
+                    </h6>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Nombre</label>
+                            <InputText class="form-control" placeholder="Ej: Juan" @bind-Value="paymentModel.Name" disabled="@disabled" />
+                            <ValidationMessage For="@(() => paymentModel.Name)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Apellido</label>
+                            <InputText class="form-control" placeholder="Ej: Pérez" @bind-Value="paymentModel.Surname" disabled="@disabled" />
+                            <ValidationMessage For="@(() => paymentModel.Surname)" />
+                        </div>
                     </div>
-                    <div class="mb-2">
-                        <label  class="form-label">Numero Tarjeta</label>
-                        <input type="text" class="form-control form-control-sm" placeholder="##############" autocomplete="off" @bind-value="card.Number" disabled="@disabled">
-                        <ValidationMessage For="@(()=>card.Number)" />
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Correo Electrónico</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                            <InputText class="form-control" placeholder="juan@mail.com" @bind-Value="paymentModel.Email" disabled="@disabled" />
+                        </div>
+                        <ValidationMessage For="@(() => paymentModel.Email)" />
                     </div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="mb-2">
-                                <label class="form-label">Vigencia</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="MM/YY" autocomplete="off" @bind-value="card.Validity" disabled="@disabled">
-                                <ValidationMessage For="@(()=>card.Validity)" />
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label small text-muted">Tipo Doc.</label>
+                            <InputSelect class="form-select" @bind-Value="paymentModel.IdentificationType" disabled="@disabled">
+                                <option value="DNI">DNI</option>
+                                <option value="CUIL">CUIL</option>
+                                <option value="CUIT">CUIT</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label small text-muted">Número Doc.</label>
+                            <InputText class="form-control" placeholder="Sin puntos" @bind-Value="paymentModel.IdentificationNumber" disabled="@disabled" />
+                            <ValidationMessage For="@(() => paymentModel.IdentificationNumber)" />
+                        </div>
+                    </div>
+
+                    @* SECCIÓN 2: CONTACTO *@
+                    <h6 class="text-secondary border-bottom pb-2 mb-3 mt-4">
+                        <i class="bi bi-telephone me-2"></i>Teléfono
+                    </h6>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label small text-muted">Cód. Área</label>
+                            <div class="input-group">
+                                <span class="input-group-text text-muted">0</span>
+                                <InputText class="form-control" placeholder="381" @bind-Value="paymentModel.PhoneAreaCode" disabled="@disabled" />
                             </div>
+                            <ValidationMessage For="@(() => paymentModel.PhoneAreaCode)" />
                         </div>
-                        <div class="col-sm-6">
-                            <div class="mb-2">
-                                <label class="form-label">CVV</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="###" autocomplete="off" @bind-value="card.CVV" disabled="@disabled">
-                                <ValidationMessage For="@(()=>card.CVV)" />
-                            </div>
-                        </div>
-                    </div>
-                    <hr />
-                    <div class="d-flex justify-content-between">
-                        <div>Total a pagar:</div>
-                        <div>S/. @(list.Sum(i => i.Total))</div>
-                    </div>
-                    <div class="mt-2">
-                        <div class="d-grid gap-1">
-                            <button class="btn btn-outline-secondary float-end" type="submit" disabled="@disabled">Procesar pago</button>
+                        <div class="col-8">
+                            <label class="form-label small text-muted">Número</label>
+                            <InputText class="form-control" placeholder="155977039" @bind-Value="paymentModel.PhoneNumber" disabled="@disabled" />
+                            <ValidationMessage For="@(() => paymentModel.PhoneNumber)" />
                         </div>
                     </div>
+
+                    @* SECCIÓN 3: UBICACIÓN *@
+                    <h6 class="text-secondary border-bottom pb-2 mb-3 mt-4">
+                        <i class="bi bi-geo-alt me-2"></i>Domicilio de Envío
+                    </h6>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label small text-muted">Calle</label>
+                            <InputText class="form-control" placeholder="Ej: Av. Roca" @bind-Value="paymentModel.StreetName" disabled="@disabled" />
+                            <ValidationMessage For="@(() => paymentModel.StreetName)" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small text-muted">Altura</label>
+                            <InputText class="form-control" placeholder="123" @bind-Value="paymentModel.StreetNumber" disabled="@disabled" />
+                            <ValidationMessage For="@(() => paymentModel.StreetNumber)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Código Postal</label>
+                        <InputText class="form-control" placeholder="Ej: 4000" @bind-Value="paymentModel.ZipCode" disabled="@disabled" />
+                        <ValidationMessage For="@(() => paymentModel.ZipCode)" />
+                    </div>
+
+                    @* RESUMEN DE PAGO *@
+                    <div class="bg-light p-3 rounded border mt-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-dark">Total a Pagar:</span>
+                            <span class="fs-5 fw-bold text-success">$ @(list.Sum(i => i.Total))</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <AuthorizeView>
+                            <Authorized Context="authContext">
+                                <div class="d-grid gap-2">
+                                    @if (isProcessing)
+                                    {
+                                        <button class="btn btn-secondary py-2" disabled type="button">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Procesando pedido...
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-primary py-2 fw-bold shadow-sm" type="submit" disabled="@(!list.Any())">
+                                            <i class="bi bi-wallet2 me-2"></i> Ir a Pagar con Mercado Pago
+                                        </button>
+                                    }
+                                </div>
+                            </Authorized>
+                            <NotAuthorized Context="authContext">
+                                <div class="alert alert-warning d-flex align-items-center mt-2" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <div>Inicia sesión para finalizar la compra.</div>
+                                </div>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                    </div>
+
                 </EditForm>
-
-                <AuthorizeView>
-                    <NotAuthorized>
-                        <div class="alert alert-danger mt-2" role="alert">
-                            Debe iniciar sesion para poder realizar la compra
-                        </div>
-                    </NotAuthorized>
-                </AuthorizeView>
-
-
             </div>
         </div>
     </div>
@@ -148,12 +221,24 @@
 
 @code {
     private bool disabled = true;
+    private bool isProcessing = false;
     private List<CartDTO> list = new List<CartDTO>();
-    private decimal? totalToPay = 0;
     private CardDTO card = new CardDTO();
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationState { get; set; }
+
+    private SendPaymentDTO paymentModel = new SendPaymentDTO
+    {
+        PhoneAreaCode = string.Empty,
+        PhoneNumber = string.Empty,
+        IdentificationNumber = string.Empty,
+        ZipCode = string.Empty,
+        StreetName = string.Empty,
+        StreetNumber = string.Empty,
+        Items = new List<CartItemShortDTO>()
+    };
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -168,7 +253,7 @@
     {
         CartDTO item = list.First(p => p.Product.IdProduct == id);
         decimal? finalPrice = (item.Product.SalePrice != 0 && item.Product.SalePrice < item.Product.Price) ? item.Product.SalePrice : item.Product.Price;
-        if(item.Quantity - 1 > 0)
+        if (item.Quantity - 1 > 0)
         {
             item.Quantity--;
             item.Total = item.Quantity * finalPrice;
@@ -181,70 +266,20 @@
         decimal? finalPrice = (item.Product.SalePrice != 0 && item.Product.SalePrice < item.Product.Price) ? item.Product.SalePrice : item.Product.Price;
         item.Quantity++;
         item.Total = item.Quantity * finalPrice;
-
     }
 
     private async Task Delete(int idProduct)
     {
         CartDTO product = list.First(p => p.Product.IdProduct == idProduct);
-        if(product != null)
+        if (product != null)
         {
             list.Remove(product);
             await _cartService.DeleteCart(idProduct);
         }
     }
 
-
-
-    //Metodos para pagar y finalizar proceso de compra.
-
-    private async Task PayWithMercadoPago()
-    {
-        if (list.Count == 0)
-        {
-            _toastService.ShowWarning("No se encontraron productos");
-            return;
-        }
-
-        var authState = await AuthenticationState;
-        var user = authState.User;
-
-        var paymentDto = new SendPaymentDTO
-        {
-            Email = user.Claims.Where(c => c.Type == ClaimTypes.Email).Select(c => c.Value).Single(),
-            IdentificationType = "DNI", // o lo que corresponda
-            IdentificationNumber = "12345678", // o lo que corresponda
-            StreetName = "Calle Ejemplo",
-            StreetNumber = "123",
-            ZipCode = "1000",
-            PhoneAreaCode = "11",
-            PhoneNumber = "12345678",
-            Cart = list, // Tu lista de CartDTO
-
-            // Miembros requeridos por CS9035
-            PersonType = "individual", // Ajusta según tu lógica de negocio
-            BanksList = "", // O la lista de bancos correspondiente
-            TransactionAmount = list.Sum(i => i.Total).ToString() ?? "", // Suma total del carrito
-            Description = "Compra en DinoShop", // Ajusta según tu lógica
-            Neighborhood = "Barrio Ejemplo", // Ajusta según tu lógica
-            City = "Ciudad Ejemplo", // Ajusta según tu lógica
-            FederalUnit = "Unidad Federal Ejemplo" // Ajusta según tu lógica
-        };
-
-        var url = await _cartService.PayProductsAsync(paymentDto);
-
-        if (!string.IsNullOrEmpty(url))
-        {
-            _navServicio.NavigateTo(url, true); // Redirige a MercadoPago
-        }
-        else
-        {
-            _toastService.ShowError("No se pudo iniciar el pago");
-        }
-    }
-
-
-    private async Task ProcessPayment()
+    // LÓGICA CORE INTEGRADA: Mercado Pago + Orden en Backend
+    private async Task ProcessPaymentWithMercadoPago()
     {
         if(list.Count == 0)
         {
@@ -252,39 +287,60 @@
             return;
         }
 
-        List<OrderDetailDTO> detail = new List<OrderDetailDTO>();
+        isProcessing = true;
 
-        foreach(var item in list)
+        try 
         {
-            detail.Add(new OrderDetailDTO()
+            // 1. Obtener ID del Usuario Logueado
+
+            var authState = await AuthenticationState;
+            string idUser = authState.User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).Single();
+
+            if (string.IsNullOrEmpty(idUser))
             {
-                IdProduct = item.Product.IdProduct,
-                Quantity = item.Quantity,
-                Total = item.Total
-            });
-        }
+                _toastService.ShowError("Error de autenticación.");
+                return;
+            }
 
-        var authState = await AuthenticationState;
-        string idUser = authState.User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).Single();
+            paymentModel.IdUser = idUser;
 
-        OrderDTO model = new OrderDTO()
+            // 2. Mapeo Seguro: CartDTO -> CartItemShortDTO
+            // Convertimos la lista visual a la lista que necesita el DTO de pago
+            paymentModel.Items = list.Select(x => new CartItemShortDTO 
+            { 
+                ProductId = x.Product.IdProduct, 
+                // Usamos GetValueOrDefault porque tu Quantity es nullable int?
+                Quantity = x.Quantity.GetValueOrDefault(1) 
+            }).ToList();
+
+            // 3. Llamada al Backend (PaymentController)
+            // El backend CREARÁ la orden en DB con estado Pendiente y devolverá la PreferenciaID de MP
+            var response = await _http.PostAsJsonAsync("Payment/create-preference", paymentModel);
+            var result = await response.Content.ReadFromJsonAsync<ResponseDTO<string>>();
+
+            if (result != null && result.IsCorrect)
             {
-                IdUser = Convert.ToInt32(idUser),
-                Total = list.Sum(i => i.Total),
-                OrderDetails = detail
-            };
+                var preferenceId = result.Result;
+                var publicKey = "APP_USR-e15d81d4-8ab8-4dfe-8345-ad4127d6a519"; // Reemplaza con tu credencial real del Dashboard de MP
 
-        var response = await _OrderService.Register(model);
-
-        if (response.IsCorrect)
-        {
-            await _cartService.ClearCart();
-            _toastService.ShowSuccess("Venta registrada");
-            _navServicio.NavigateTo("/");
+                // 4. Iniciar Checkout Pro de Mercado Pago (Modal/Redirect)
+                await _js.InvokeVoidAsync("mercadoPagoCheckout", publicKey, preferenceId);
+                
+                // Nota: No limpiamos el carrito aquí. Se limpia en la pagina "Success" o "Aprobado" 
+                // cuando MP retorna, o mediante el Webhook.
+            }
+            else
+            {
+                _toastService.ShowError(result?.Message ?? "Error al conectar con Mercado Pago");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _toastService.ShowError(response.Message);
+            _toastService.ShowError("Error inesperado: " + ex.Message);
+        }
+        finally
+        {
+            isProcessing = false;
         }
     }
 }
