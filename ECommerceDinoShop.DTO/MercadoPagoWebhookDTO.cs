@@ -4,27 +4,28 @@ namespace ECommerceDinoShop.DTO
 {
     public class MercadoPagoWebhookDTO
     {
-        public string action { get; set; }
+        [JsonPropertyName("action")]
+        public string Action { get; set; }
 
-        
-        public string api_version { get; set; }
+        [JsonPropertyName("api_version")]
+        public string ApiVersion { get; set; }
 
-       
-        public MercadoPagoData data { get; set; }
+        [JsonPropertyName("data")]
+        public MercadoPagoData Data { get; set; }
 
-        
-        public DateTime? date_created { get; set; }
+        [JsonPropertyName("date_created")]
+        public DateTime? DateCreated { get; set; }
 
-       
-        public long id { get; set; }
+        [JsonPropertyName("id")]
+        public long Id { get; set; }
 
-       
-        public bool live_mode { get; set; }
+        [JsonPropertyName("live_mode")]
+        public bool LiveMode { get; set; }
 
-      
-        public string type { get; set; }
+        [JsonPropertyName("type")]
+        public string Type { get; set; }
 
-       
-        public long user_id { get; set; }
+        [JsonPropertyName("user_id")]
+        public long UserId { get; set; }
     }
 }

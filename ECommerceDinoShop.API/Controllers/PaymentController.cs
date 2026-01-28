@@ -5,10 +5,11 @@ using MercadoPago.Client.Payment;
 using MercadoPago.Client.Preference;
 using MercadoPago.Resource.Payment;
 using MercadoPago.Resource.Preference;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 namespace ECommerceDinoShop.API.Controllers
 {
@@ -17,7 +18,7 @@ namespace ECommerceDinoShop.API.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly IOrderService _orderService; // Inyectamos el servicio de Ordenes
+        private readonly IOrderService _orderService;
         private readonly IConfiguration _configuration;
 
         public PaymentController(IProductService productService, IOrderService orderService, IConfiguration configuration)
@@ -33,15 +34,10 @@ namespace ECommerceDinoShop.API.Controllers
             try
             {
                 if (model is null) return BadRequest("Datos inválidos");
+                if (string.IsNullOrEmpty(model.IdentificationType)) model.IdentificationType = "DNI";
 
-                if (string.IsNullOrEmpty(model.IdentificationType))
-                {
-                    model.IdentificationType = "DNI";
-                }
-
-                // 1. Recuperar productos reales de la DB
+                // 1. Crear items de la preferencia
                 var itemsRequest = new List<PreferenceItemRequest>();
-
                 foreach (var item in model.Items)
                 {
                     var productDb = await _productService.Obtain(item.ProductId);
@@ -55,14 +51,13 @@ namespace ECommerceDinoShop.API.Controllers
                         CurrencyId = "ARS",
                         Description = productDb.Description,
                         CategoryId = productDb.IdCategory.ToString(),
-                        // Precio real desde la DB
                         UnitPrice = (productDb.SalePrice != 0 && productDb.SalePrice < productDb.Price) ? productDb.SalePrice : productDb.Price
                     });
                 }
 
+                // Ajusta esta URL según tu entorno local o producción
                 var clientUrl = "https://localhost:7183";
 
-                // 2. Crear la solicitud
                 var preferenceRequest = new PreferenceRequest
                 {
                     Items = itemsRequest,
@@ -71,22 +66,9 @@ namespace ECommerceDinoShop.API.Controllers
                         Name = model.Name,
                         Surname = model.Surname,
                         Email = model.Email,
-                        Identification = new IdentificationRequest
-                        {
-                            Type = model.IdentificationType,
-                            Number = model.IdentificationNumber
-                        },
-                        Address = new AddressRequest
-                        {
-                            StreetName = model.StreetName,
-                            StreetNumber = int.TryParse(model.StreetNumber, out int sn) ? sn : 0,
-                            ZipCode = model.ZipCode
-                        },
-                        Phone = new PhoneRequest
-                        {
-                            AreaCode = model.PhoneAreaCode,
-                            Number = model.PhoneNumber
-                        }
+                        Identification = new IdentificationRequest { Type = model.IdentificationType, Number = model.IdentificationNumber },
+                        Address = new AddressRequest { StreetName = model.StreetName, StreetNumber = int.TryParse(model.StreetNumber, out int sn) ? sn : 0, ZipCode = model.ZipCode },
+                        Phone = new PhoneRequest { AreaCode = model.PhoneAreaCode, Number = model.PhoneNumber }
                     },
                     BackUrls = new PreferenceBackUrlsRequest
                     {
@@ -95,16 +77,16 @@ namespace ECommerceDinoShop.API.Controllers
                         Pending = $"{clientUrl}/cart/pendiente"
                     },
                     AutoReturn = "approved",
-                    // IMPORTANTE: Pasamos el ID del Usuario en ExternalReference para recuperarlo en el Webhook
-                    ExternalReference = model.IdUser,
+                    ExternalReference = model.IdUser.ToString(),
+                    // Asegúrate de que esta URL sea accesible públicamente (ngrok)
                     NotificationUrl = "https://janiya-oxidimetric-wilfred.ngrok-free.dev/api/payment/webhook",
-                    StatementDescriptor = "Mayorista DinoShop"
+                    StatementDescriptor = "DinoShop"
                 };
 
                 var client = new PreferenceClient();
                 Preference preference = await client.CreateAsync(preferenceRequest);
 
-                return Ok(new ResponseDTO<string> { IsCorrect = true, Result = preference.Id, Message = preference.NotificationUrl });
+                return Ok(new ResponseDTO<string> { IsCorrect = true, Result = preference.Id, Message = preference.ApiResponse.ToString() });
             }
             catch (Exception ex)
             {
@@ -115,32 +97,48 @@ namespace ECommerceDinoShop.API.Controllers
         [HttpPost("webhook")]
         public async Task<IActionResult> ReceiveWebhook([FromBody] MercadoPagoWebhookDTO notification)
         {
-            // 1. VALIDACIÓN DE SEGURIDAD
-            if (!IsValidSignature(Request))
+            // === PASO 1: VALIDACIÓN DE SEGURIDAD CON LOGS ===
+            Console.WriteLine($"[Webhook] Recibiendo notificación...");
+
+            // Pasamos el ID del body como respaldo por si no viene en la URL
+            string bodyId = notification?.Data?.Id ?? notification?.Id.ToString();
+
+            if (!IsValidSignature(notification))
             {
+                Console.WriteLine($"[Webhook Error] Firma inválida. Rechazando con 401.");
                 return Unauthorized();
             }
+
+            Console.WriteLine($"[Webhook] Firma Aprobada. Procesando datos...");
 
             try
             {
                 if (notification == null) return Ok();
 
-                if (notification.type == "payment" && notification.data != null && !string.IsNullOrEmpty(notification.data.id))
+                // Verificar si es un evento de pago
+                if (notification.Type == "payment")
                 {
-                    if (long.TryParse(notification.data.id, out long paymentId))
+                    // Intentamos obtener el ID, ya sea de Data.Id o del Id raíz
+                    string idStr = notification.Data?.Id ?? notification.Id.ToString();
+
+                    if (long.TryParse(idStr, out long paymentId))
                     {
+                        Console.WriteLine($"[Webhook] Consultando estado del pago ID: {paymentId}");
+
                         var client = new PaymentClient();
+                        var payment = await client.GetAsync(paymentId);
 
-                        MercadoPago.Resource.Payment.Payment payment = null;
+                        Console.WriteLine($"[Webhook] Estado del pago: {payment.Status}");
 
-                        // Paso C: Procesamos si obtuvimos el pago y está aprobado
-                        if (payment != null && payment.Status == PaymentStatus.Approved)
+                        if (payment.Status == PaymentStatus.Approved)
                         {
                             string userIdStr = payment.ExternalReference;
+                            Console.WriteLine($"[Webhook] Pago Aprobado. Usuario ID: {userIdStr}");
 
+                            // Lógica de recuperación de items y guardado...
                             List<OrderDetailDTO> detail = new List<OrderDetailDTO>();
 
-                            if (payment.AdditionalInfo != null && payment.AdditionalInfo.Items != null)
+                            if (payment.AdditionalInfo?.Items != null)
                             {
                                 foreach (var itemMp in payment.AdditionalInfo.Items)
                                 {
@@ -151,8 +149,9 @@ namespace ECommerceDinoShop.API.Controllers
 
                                         decimal priceProductDb = (productDb.SalePrice != 0 && productDb.SalePrice < productDb.Price) ? productDb.SalePrice.Value : productDb.Price.Value;
 
+                                        // Parseo seguro de cantidad
                                         int quantity = 1;
-                                        if (itemMp.Quantity != null) int.TryParse(itemMp.Quantity.ToString(), out quantity);
+                                        if (int.TryParse(itemMp.Quantity?.ToString(), out int q)) quantity = q;
 
                                         detail.Add(new OrderDetailDTO()
                                         {
@@ -174,80 +173,54 @@ namespace ECommerceDinoShop.API.Controllers
                                 };
 
                                 var result = await _orderService.Register(model);
-
                                 if (result != null)
                                 {
-                                    Console.WriteLine($"[Exito] Venta registrada. Orden ID: {result.IdOrder}");
+                                    Console.WriteLine($"[Exito] Orden {result.IdOrder} registrada en DB.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[Error] El servicio de orden devolvió null.");
                                 }
                             }
                         }
                     }
                 }
-
                 return Ok();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en Webhook: {ex.Message}");
+                Console.WriteLine($"[Webhook Exception] {ex.Message}");
                 return Ok();
             }
         }
 
-        private bool IsValidSignature(HttpRequest request)
+        private bool IsValidSignature(MercadoPagoWebhookDTO webhookDTO)
         {
-            try
+            if (HttpContext!.Request.Headers.TryGetValue("x-signature", out var signatureHeader)
+         && HttpContext!.Request.Headers.TryGetValue("x-request-id", out var requestIdHeader)
+         && signatureHeader.Count != 0
+         && requestIdHeader.Count != 0
+         && !string.IsNullOrEmpty(_configuration["MercadoPago:WebhookSecret"]))
             {
-                // 1. CORRECCIÓN: Usar los nombres reales de los Headers
-                string xSignature = request.Headers["x-signature"];
-                string xRequestId = request.Headers["x-request-id"];
+                const int prefixLength = 3;
+                var headerData = signatureHeader.FirstOrDefault()!.Split(',');
+                var timeStamp = headerData.FirstOrDefault()![prefixLength..];
+                var hash = headerData.LastOrDefault()![prefixLength..];
 
-                // 2. CORRECCIÓN: Usar el nombre real del Query Param
-                string dataID = request.Query["data.id"];
+                var hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(_configuration["MercadoPago:WebhookSecret"]));//Signature from Webhook configuration
+                var manifest = $"id:{webhookDTO.Data.Id};request-id:{requestIdHeader};ts:{timeStamp};";
+                var computedHash = hmacsha256.ComputeHash(Encoding.UTF8.GetBytes(manifest));
+                var computedHashString = Convert.ToHexString(computedHash);
 
-                // Validaciones básicas
-                if (string.IsNullOrEmpty(xSignature) || string.IsNullOrEmpty(xRequestId) || string.IsNullOrEmpty(dataID))
-                    return false;
+                if (!computedHashString.Equals(hash, StringComparison.InvariantCultureIgnoreCase))
+                    return true;
 
-                // B. Separar partes de la firma (ts y v1)
-                var parts = xSignature.Split(',');
-                string ts = null;
-                string hashRecibido = null;
-
-                foreach (var part in parts)
-                {
-                    var keyValue = part.Split('=', 2);
-                    if (keyValue.Length == 2)
-                    {
-                        var key = keyValue[0].Trim();
-                        var value = keyValue[1].Trim();
-                        if (key == "ts") ts = value;
-                        else if (key == "v1") hashRecibido = value;
-                    }
-                }
-
-                // C. Obtener tu clave secreta
-                string secret = _configuration["MercadoPago:WebhookSecret"];
-                if (string.IsNullOrEmpty(secret)) return false;
-
-                // D. Generar el manifiesto
-                // NOTA: Aquí sí usamos el formato del template que pide la doc, concatenando las variables
-                // Template: id:[data.id];request-id:[x-request-id];ts:[ts];
-                string manifest = $"id:{dataID};request-id:{xRequestId};ts:{ts};";
-
-                // E. Calcular HMAC SHA-256
-                using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret)))
-                {
-                    var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(manifest));
-                    var computedHashString = BitConverter.ToString(computedHash).Replace("-", "").ToLower();
-
-                    // F. Comparar hash calculado vs recibido
-                    return computedHashString == hashRecibido;
-                }
+                
+                return true;
             }
-            catch
-            {
-                return false;
-            }
+
+            return false;
         }
+
     }
 }
