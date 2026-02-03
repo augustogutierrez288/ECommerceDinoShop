@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="mercadopago-sdk" Version="2.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ECommerceDaniShop.Model\ECommerceDinoShop.Model.csproj" />
     <ProjectReference Include="..\ECommerceDinoShop.DTO\ECommerceDinoShop.DTO.csproj" />
     <ProjectReference Include="..\ECommerceDinoShop.Repository\ECommerceDinoShop.Repository.csproj" />
