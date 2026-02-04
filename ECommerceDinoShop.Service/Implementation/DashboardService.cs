@@ -1,6 +1,4 @@
-﻿
-
-using ECommerceDinoShop.DTO;
+﻿using ECommerceDinoShop.DTO;
 using ECommerceDinoShop.Model;
 using ECommerceDinoShop.Repository.Contract;
 using ECommerceDinoShop.Service.Contract;

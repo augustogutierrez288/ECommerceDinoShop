@@ -16,6 +16,23 @@ namespace ECommerceDinoShop.API.Controllers
             _orderService = orderService;
         }
 
+        [HttpGet("List")]
+        public async Task<IActionResult> List()
+        {
+            var response = new ResponseDTO<List<OrderDTO>>();
+            try
+            {
+                response.Result = await _orderService.ListAsync();
+                response.IsCorrect = true;
+            }
+            catch (Exception ex)
+            {
+                response.IsCorrect = false;
+                response.Message = ex.Message;
+            }
+            return Ok(response);
+        }
+
         [HttpPost("Register/")]
         public async Task<IActionResult> Register([FromBody] OrderDTO model)
         {

@@ -2,7 +2,9 @@
 using ECommerceDinoShop.DTO;
 using ECommerceDinoShop.Model;
 using ECommerceDinoShop.Repository.Contract;
+using ECommerceDinoShop.Repository.Implementation;
 using ECommerceDinoShop.Service.Contract;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceDinoShop.Service.Implementation
 {
@@ -17,7 +19,18 @@ namespace ECommerceDinoShop.Service.Implementation
             _mapper = mapper;
         }
 
-      
+        public async Task<List<OrderDTO>> ListAsync()
+        {
+            try
+            {
+                var orders = await _modelRepository.GetAllOrdersWithDetails();
+                return _mapper.Map<List<OrderDTO>>(orders);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
         public async Task<OrderDTO> Register(OrderDTO model)
         {
             try
@@ -35,6 +48,5 @@ namespace ECommerceDinoShop.Service.Implementation
                 throw ex;
             }
         }
-    
     }
 }

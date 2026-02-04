@@ -3,13 +3,11 @@
     public class OrderDetailDTO
     {
         public int IdOrderDetail { get; set; }
-
         public int? IdOrder { get; set; }
-
         public int? IdProduct { get; set; }
-
+        public string? ProductName { get; set; }
+        public string? ProductImage { get; set; }
         public int? Quantity { get; set; }
-
         public decimal? Total { get; set; }
     }
 }

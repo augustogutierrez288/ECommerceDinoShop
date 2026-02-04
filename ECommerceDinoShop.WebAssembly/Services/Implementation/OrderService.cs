@@ -13,6 +13,10 @@ namespace ECommerceDinoShop.WebAssembly.Services.Implementation
             _httpClient = httpClient;
         }
 
+        public async Task<ResponseDTO<List<OrderDTO>>> List()
+        {
+            return await _httpClient.GetFromJsonAsync<ResponseDTO<List<OrderDTO>>>("Order/List");
+        }
         public async Task<ResponseDTO<OrderDTO>> Register(OrderDTO model)
         {
             var response = await _httpClient.PostAsJsonAsync("Order/Register", model);

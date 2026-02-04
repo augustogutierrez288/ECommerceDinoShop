@@ -1,0 +1,133 @@
+﻿@page "/orders"
+@using ECommerceDinoShop.DTO
+@using ECommerceDinoShop.WebAssembly.Services.Contract
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrador")]
+
+@inject IOrderService _orderService
+@inject IJSRuntime _jsService
+
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-second-primary">
+            <h6 class="m-0 font-weight-bold text-white">Listado de Órdenes</h6>
+        </div>
+        <div class="card-body">
+            @if (lista == null)
+            {
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Cargando...</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th># Orden</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in lista)
+                            {
+                                <tr>
+                                    <td>@item.IdOrder</td>
+                                    <td>@item.ClientName</td>
+                                    <td>@item.CreatedAtString</td>
+                                    <td>$ @item.Total</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" @onclick="() => VerDetalle(item)">
+                                            <i class="oi oi-eye"></i> Ver Detalle
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (mostrarModal)
+{
+    <div class="modal fade show" style="display:block; background-color: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Detalle de Orden #@ordenSeleccionada.IdOrder</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Cliente: <strong>@ordenSeleccionada.ClientName</strong></h6>
+                    <hr />
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Imagen</th>
+                                <th>Cantidad</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detalle in ordenSeleccionada.OrderDetails)
+                            {
+                                <tr>
+                                    <td>@detalle.ProductName</td>
+                                    <td><img src="@detalle.ProductImage" style="width: 50px; height: 50px; object-fit: cover;" /></td>
+                                    <td>@detalle.Quantity</td>
+                                    <td>$ @detalle.Total</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="text-end">
+                        <h5>Total Pagado: <strong>$ @ordenSeleccionada.Total</strong></h5>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<OrderDTO>? lista = null;
+    private OrderDTO ordenSeleccionada = new OrderDTO();
+    private bool mostrarModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await _orderService.List();
+        if (response.IsCorrect)
+        {
+            lista = response.Result;
+        }
+        else
+        {
+            lista = new List<OrderDTO>();
+        }
+    }
+
+    private void VerDetalle(OrderDTO orden)
+    {
+        ordenSeleccionada = orden;
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+    }
+}

@@ -1,5 +1,6 @@
 ﻿using ECommerceDinoShop.Model;
 using ECommerceDinoShop.Repository.Contract;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceDinoShop.Repository.Implementation
 {
@@ -12,6 +13,15 @@ namespace ECommerceDinoShop.Repository.Implementation
             _dbContext = dbContext;
         }
 
+        public async Task<List<Order>> GetAllOrdersWithDetails()
+        {
+            return await _dbContext.Orders
+                .Include(u => u.IdUserNavigation)
+                .Include(od => od.OrderDetails)
+                    .ThenInclude(p => p.IdProductNavigation)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+        }
         public async Task<Order> Register(Order model)
         {
             Order orderGenerated = new Order();
