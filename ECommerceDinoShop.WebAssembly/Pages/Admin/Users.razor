@@ -21,8 +21,8 @@
                 
                 <span class="input-group-text bg-light d-none d-sm-block">Filtrar:</span>
                 <select class="form-select" style="max-width: 160px;" value="@selectedRole" @onchange="OnRoleChanged">
-                    <option value="Administrador" selected>Administrador</option>
-                    <option value="Cliente">Cliente</option>
+                    <option value="Administrador">Administrador</option>
+                    <option value="Cliente" onselect="Cliente">Cliente</option>
                 </select>
 
                 <input type="text" class="form-control" placeholder="Buscar usuario..." @bind-value="search">
@@ -86,7 +86,7 @@
     private List<UserDTO>? list = null;
     private string search = string.Empty;
     // Variable local para almacenar el rol seleccionado
-    private string selectedRole = string.Empty; 
+    private string selectedRole = "Cliente";
 
     // Método para manejar el cambio en el select
     private async Task OnRoleChanged(ChangeEventArgs e)

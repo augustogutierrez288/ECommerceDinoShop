@@ -7,7 +7,7 @@
 @inject IOrderService _orderService
 @inject IJSRuntime _jsService
 
-<div class="container-fluid">
+<div class="container-fluid w-100 p-0">
     <div class="card shadow mb-4">
         <div class="card-header py-3 bg-second-primary">
             <h6 class="m-0 font-weight-bold text-white">Listado de Órdenes</h6>
@@ -16,8 +16,7 @@
             @if (lista == null)
             {
                 <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="sr-only">Cargando...</span>
+                    <div class="spinner-border" role="status">    
                     </div>
                 </div>
             }
@@ -43,7 +42,7 @@
                                     <td>@item.CreatedAtString</td>
                                     <td>$ @item.Total</td>
                                     <td>
-                                        <button class="btn btn-sm btn-info" @onclick="() => VerDetalle(item)">
+                                        <button class="btn btn-sm btn-primary" @onclick="() => VerDetalle(item)">
                                             <i class="oi oi-eye"></i> Ver Detalle
                                         </button>
                                     </td>
@@ -62,7 +61,7 @@
     <div class="modal fade show" style="display:block; background-color: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
-                <div class="modal-header bg-info text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Detalle de Orden #@ordenSeleccionada.IdOrder</h5>
                     <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal"></button>
                 </div>
@@ -72,8 +71,8 @@
                     <table class="table table-sm table-striped">
                         <thead>
                             <tr>
-                                <th>Producto</th>
                                 <th>Imagen</th>
+                                <th>Producto</th>
                                 <th>Cantidad</th>
                                 <th>Total</th>
                             </tr>
@@ -82,8 +81,8 @@
                             @foreach (var detalle in ordenSeleccionada.OrderDetails)
                             {
                                 <tr>
-                                    <td>@detalle.ProductName</td>
                                     <td><img src="@detalle.ProductImage" style="width: 50px; height: 50px; object-fit: cover;" /></td>
+                                    <td>@detalle.ProductName</td>
                                     <td>@detalle.Quantity</td>
                                     <td>$ @detalle.Total</td>
                                 </tr>
@@ -95,7 +94,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cerrar</button>
+                    <button type="button" class="btn btn-danger" @onclick="CerrarModal">Cerrar</button>
                 </div>
             </div>
         </div>
