@@ -34,5 +34,22 @@ namespace ECommerceDinoShop.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet("Analytics")]
+        public async Task<IActionResult> GetAnalytics()
+        {
+            var response = new ResponseDTO<DashboardAnalyticsDTO>();
+            try
+            {
+                response.Result = await _dashboardService.GetAnalytics();
+                response.IsCorrect = true;
+            }
+            catch (Exception ex)
+            {
+                response.IsCorrect = false;
+                response.Message = ex.Message;
+            }
+            return Ok(response);
+        }
     }
 }

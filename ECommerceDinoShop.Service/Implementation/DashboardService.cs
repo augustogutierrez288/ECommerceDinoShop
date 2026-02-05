@@ -22,7 +22,7 @@ namespace ECommerceDinoShop.Service.Implementation
             _userRepository = userRepository;
         }
 
-        private string Income() //Ingresos
+        private string Income()
         {
             var consult = _orderRepository.Consult();
             decimal? income = consult.Sum(x => x.Total);
@@ -30,7 +30,7 @@ namespace ECommerceDinoShop.Service.Implementation
             return Convert.ToString(income);
         }
 
-        private int Order() //Ventas
+        private int Order()
         {
             var consult = _orderRepository.Consult();
             int total = consult.Count();
@@ -38,7 +38,7 @@ namespace ECommerceDinoShop.Service.Implementation
             return total;
         }
 
-        private int Customers() //Clientes
+        private int Customers()
         {
             var consult = _userRepository.Consult(u => u.Role.ToLower() == "cliente");
             int total = consult.Count();
@@ -71,6 +71,11 @@ namespace ECommerceDinoShop.Service.Implementation
             {
                 throw ex;
             }
+        }
+
+        public async Task<DashboardAnalyticsDTO> GetAnalytics()
+        {
+            return await _orderRepository.GetAnalyticsAsync();
         }
     }
 }

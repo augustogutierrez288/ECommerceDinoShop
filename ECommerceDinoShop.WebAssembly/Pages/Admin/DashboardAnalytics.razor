@@ -1,0 +1,149 @@
+﻿@using ECommerceDinoShop.DTO
+@using ECommerceDinoShop.WebAssembly.Services.Contract
+@using System.Threading
+@attribute [Authorize(Roles = "Administrador")]
+
+@inject IOrderService _orderService
+@inject IDashboardService _dashboardService
+@inject IJSRuntime _jsService
+@implements IDisposable
+
+<div class="container-fluid">
+
+    <section class="d-flex flex-column justify-content-center align-items-start w-100">
+        <h4 class="mb-3 fs-3 fw-semibold text-start">Estadísticas en Tiempo Real <small class="text-muted fs-6">(Actualizando...)</small></h4>
+
+        <div class="row w-100">
+            <div class="col-12 col-md-6 col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 bg-white">
+                        <h6 class="m-0 font-weight-bold text-primary">Ingresos Mensuales</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:200px; width:100%">
+                            <canvas id="chartMonthly"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 bg-white">
+                        <h6 class="m-0 font-weight-bold text-success">Top Clientes ($)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:200px; width:100%">
+                            <canvas id="chartClients"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 bg-white">
+                        <h6 class="m-0 font-weight-bold text-info">Productos Top</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:200px; width:100%">
+                            <canvas id="chartProducts"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 bg-white">
+                        <h6 class="m-0 font-weight-bold text-warning">Venta Diaria (7 días)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:200px; width:100%">
+                            <canvas id="chartDaily"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="card shadow mb-4">
+    </div>
+
+</div>
+
+@code {
+    private List<OrderDTO>? lista = null;
+    private PeriodicTimer? timer;
+    private CancellationTokenSource cts = new CancellationTokenSource();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Iniciar Timer para actualizar gráficas y tabla cada 5 segundos (Tiempo Real Simulado)
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        _ = RunTimer();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Aquí es seguro llamar a JS porque el HTML y los scripts ya cargaron
+            await CargarDatos();
+        }
+    }
+
+    private async Task RunTimer()
+    {
+        while (await timer.WaitForNextTickAsync(cts.Token))
+        {
+            await CargarDatos();
+            // Es necesario invocar StateHasChanged para refrescar la UI si cambian variables visuales
+            StateHasChanged();
+        }
+    }
+
+    private async Task CargarDatos()
+    {
+        // 1. Cargar Lista de Ordenes
+        var responseOrders = await _orderService.List();
+        if (responseOrders.IsCorrect)
+        {
+            lista = responseOrders.Result;
+        }
+
+        // 2. Cargar Datos de Gráficas
+        // Nota: Asegúrate de agregar el método GetAnalytics al IDashboardService del frontend
+        var responseAnalytics = await _dashboardService.GetAnalytics();
+
+        if (responseAnalytics.IsCorrect && responseAnalytics.Result != null)
+        {
+            var data = responseAnalytics.Result;
+
+            // Llamamos a JS para renderizar/actualizar cada gráfica
+            // Monthly -> Bar Chart
+            await _jsService.InvokeVoidAsync("setupChart", "chartMonthly", "bar",
+                data.MonthlyRevenueLabels, data.MonthlyRevenueValues, "Ingresos $");
+
+            // Top Clientes -> Pie Chart (Doughnut)
+            await _jsService.InvokeVoidAsync("setupChart", "chartClients", "doughnut",
+                data.TopClientsLabels, data.TopClientsValues, "Compras $");
+
+            // Top Productos -> Pie Chart
+            await _jsService.InvokeVoidAsync("setupChart", "chartProducts", "pie",
+                data.TopProductsLabels, data.TopProductsValues, "Unidades");
+
+            // Daily Sales -> Line Chart
+            await _jsService.InvokeVoidAsync("setupChart", "chartDaily", "line",
+                data.DailySalesLabels, data.DailySalesValues, "Venta Diaria $");
+        }
+    }
+
+    public void Dispose()
+    {
+        // Cancelamos el timer cuando el usuario sale de la página para no consumir memoria
+        cts.Cancel();
+        timer?.Dispose();
+    }
+}

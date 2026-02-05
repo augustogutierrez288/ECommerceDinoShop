@@ -31,25 +31,29 @@
 
 
     <script src="_framework/blazor.webassembly.js"></script>
-    <script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 
+    <script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/chartHelper.js"></script>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script>
-        // Función puente para invocar el checkout desde Blazor
+
         window.mercadoPagoCheckout = (publicKey, preferenceId) => {
             const mp = new MercadoPago(publicKey, {
-                locale: 'es-AR' // Ajusta a tu país (es-CO, es-MX, etc)
+                locale: 'es-AR'
             });
 
             mp.checkout({
                 preference: {
                     id: preferenceId
                 },
-                autoOpen: true, // Abre el modal/redirect automáticamente
+                autoOpen: true,
             });
         };
     </script>
+
 </body>
 
 </html>

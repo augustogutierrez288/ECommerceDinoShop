@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ECommerceDaniShop.Model\ECommerceDinoShop.Model.csproj" />
+    <ProjectReference Include="..\ECommerceDinoShop.DTO\ECommerceDinoShop.DTO.csproj" />
   </ItemGroup>
 
 </Project>
