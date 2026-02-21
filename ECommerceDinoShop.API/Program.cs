@@ -39,6 +39,7 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IShippingService, ShippingService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 //New policy cors
