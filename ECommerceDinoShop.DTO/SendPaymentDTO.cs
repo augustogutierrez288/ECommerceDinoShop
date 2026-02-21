@@ -13,6 +13,7 @@
         public required string ZipCode { get; set; } = string.Empty;
         public required string StreetName { get; set; } = string.Empty;
         public required string StreetNumber { get; set; } = string.Empty;
+        public decimal ShippingCost { get; set; }
         public List<CartItemShortDTO> Items { get; set; } = new();
 
         

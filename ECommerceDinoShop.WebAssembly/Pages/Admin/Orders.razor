@@ -1,10 +1,13 @@
-﻿@using ECommerceDinoShop.DTO
+﻿@page "/admin/orders"
+@using ECommerceDinoShop.DTO
 @using ECommerceDinoShop.WebAssembly.Services.Contract
 @using Microsoft.AspNetCore.Authorization
+@using System.Text.Json
+
 @attribute [Authorize(Roles = "Administrador")]
 
 @inject IOrderService _orderService
-@inject IJSRuntime _jsService
+@inject IJSRuntime _js
 
 <div class="container-fluid w-100 p-0">
     <div class="card shadow mb-4">
@@ -12,37 +15,62 @@
             <h6 class="m-0 font-weight-bold text-white">Listado de Órdenes</h6>
         </div>
         <div class="card-body">
-            @if (lista == null)
+            @if (ordersList == null)
             {
                 <div class="text-center">
-                    <div class="spinner-border" role="status">    
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
                     </div>
+                </div>
+            }
+            else if (!ordersList.Any())
+            {
+                <div class="alert alert-info text-center">
+                    No hay órdenes registradas.
                 </div>
             }
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
-                        <thead>
+                    <table class="table table-bordered table-hover align-middle" width="100%" cellspacing="0">
+                        <thead class="table-light">
                             <tr>
                                 <th># Orden</th>
                                 <th>Cliente</th>
                                 <th>Fecha</th>
-                                <th>Total</th>
+                                <th>Dirección de Envío</th>
+                                <th>Costo Envío</th>
+                                <th>Total Productos</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in lista)
+                            @foreach (var item in ordersList)
                             {
+                                var shippingInfo = GetShippingData(item.IdOrder);
                                 <tr>
                                     <td>@item.IdOrder</td>
                                     <td>@item.ClientName</td>
                                     <td>@item.CreatedAtString</td>
-                                    <td>$ @item.Total</td>
                                     <td>
-                                        <button class="btn btn-sm btn-primary" @onclick="() => VerDetalle(item)">
-                                            <i class="oi oi-eye"></i> Ver Detalle
+                                        @if (shippingInfo != null && !string.IsNullOrWhiteSpace(shippingInfo.Street))
+                                        {
+                                            <span class="small">
+                                                @shippingInfo.Street @shippingInfo.Number, CP: @shippingInfo.ZipCode
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small"><i class="oi oi-warning"></i> Retiro en local / Sin datos</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @(shippingInfo != null && shippingInfo.ShippingCost > 0 ? $"$ {shippingInfo.ShippingCost}" : "$ 0")
+                                    </td>
+                                    <td class="fw-bold text-success">$ @item.Total</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary shadow-sm" @onclick="() => VerDetalle(item)">
+                                            <i class="oi oi-eye"></i> Detalle
                                         </button>
                                     </td>
                                 </tr>
@@ -55,45 +83,96 @@
     </div>
 </div>
 
-@if (mostrarModal)
+@if (mostrarModal && ordenSeleccionada != null)
 {
-    <div class="modal fade show" style="display:block; background-color: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
+    var modalShippingInfo = GetShippingData(ordenSeleccionada.IdOrder);
+
+    <div class="modal fade show" style="display:block; background-color: rgba(0,0,0,0.6);" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Detalle de Orden #@ordenSeleccionada.IdOrder</h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal"></button>
+                    <h5 class="modal-title"><i class="oi oi-list"></i> Detalle de Orden #@ordenSeleccionada.IdOrder</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <h6>Cliente: <strong>@ordenSeleccionada.ClientName</strong></h6>
-                    <hr />
-                    <table class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Imagen</th>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var detalle in ordenSeleccionada.OrderDetails)
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-1">Información del Cliente</h6>
+                            <p class="mb-0 fw-bold">@ordenSeleccionada.ClientName</p>
+                            <p class="mb-0 small">Fecha: @ordenSeleccionada.CreatedAtString</p>
+                        </div>
+                        <div class="col-md-6 border-start">
+                            <h6 class="text-muted mb-1">Información de Envío</h6>
+                            @if (modalShippingInfo != null && !string.IsNullOrWhiteSpace(modalShippingInfo.Street))
                             {
-                                <tr>
-                                    <td><img src="@detalle.ProductImage" style="width: 50px; height: 50px; object-fit: cover;" /></td>
-                                    <td>@detalle.ProductName</td>
-                                    <td>@detalle.Quantity</td>
-                                    <td>$ @detalle.Total</td>
-                                </tr>
+                                <p class="mb-0 small"><strong>Dirección:</strong> @modalShippingInfo.Street @modalShippingInfo.Number</p>
+                                <p class="mb-0 small"><strong>Localidad:</strong> @modalShippingInfo.City</p>
+                                @if (!string.IsNullOrWhiteSpace(modalShippingInfo.Apartment))
+                                {
+                                    <p class="mb-0 small"><strong>Dpto/Piso:</strong> @modalShippingInfo.Apartment</p>
+                                }
+                                <p class="mb-0 small"><strong>CP:</strong> @modalShippingInfo.ZipCode</p>
+                                @if (!string.IsNullOrWhiteSpace(modalShippingInfo.Reference))
+                                {
+                                    <p class="mb-0 small text-info"><strong>Referencia:</strong> @modalShippingInfo.Reference</p>
+                                }
+                                <p class="mb-0 small mt-1"><strong>Costo Envío:</strong> $@modalShippingInfo.ShippingCost</p>
                             }
-                        </tbody>
-                    </table>
-                    <div class="text-end">
-                        <h5>Total Pagado: <strong>$ @ordenSeleccionada.Total</strong></h5>
+                            else
+                            {
+                                <p class="mb-0 small text-warning">No se registraron datos de envío (Retiro en Sucursal).</p>
+                            }
+                        </div>
                     </div>
+
+                    <hr />
+                    <h6 class="text-muted">Productos Adquiridos</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ordenSeleccionada.OrderDetails != null)
+                                {
+                                    @foreach (var detalle in ordenSeleccionada.OrderDetails)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <img src="@detalle.ProductImage" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;" alt="@detalle.ProductName" />
+                                            </td>
+                                            <td>@detalle.ProductName</td>
+                                            <td class="text-center">@detalle.Quantity</td>
+                                            <td class="text-end">$ @detalle.Total</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-end align-items-center mt-3 p-2 bg-light rounded">
+                        <h5 class="mb-0 me-3 text-muted">Subtotal:</h5>
+                        <h4 class="mb-0 text-dark fw-bold">$ @ordenSeleccionada.Total</h4>
+                    </div>
+                    <div class="d-flex justify-content-end align-items-center p-2 bg-light rounded">
+                        <h5 class="mb-0 me-3 text-muted">Total:</h5>
+                        <h4 class="mb-0 text-success fw-bold">$@(ordenSeleccionada.Total + modalShippingInfo.ShippingCost)</h4>
+                    </div>
+                    @if (modalShippingInfo != null && modalShippingInfo.ShippingCost > 0)
+                    {
+                        <div class="d-flex justify-content-end align-items-center mt-1">
+                            <small class="text-muted">(Total final pagado sumando envío + productos )</small>
+                        </div>
+                    }
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" @onclick="CerrarModal">Cerrar</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -101,31 +180,85 @@
 }
 
 @code {
-    private List<OrderDTO>? lista = null;
-    private OrderDTO ordenSeleccionada = new OrderDTO();
+    // Variables de estado
+    private List<OrderDTO>? ordersList = null;
+    private List<ShippingAddressData> localShippingData = new();
+
+    // Variables para el Modal
     private bool mostrarModal = false;
+    private OrderDTO? ordenSeleccionada;
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await _orderService.List();
-        if (response.IsCorrect)
+        // 1. Traer las órdenes reales de la base de datos
+        try
         {
-            lista = response.Result;
+            var response = await _orderService.List();
+
+            // Asumiendo que tu método List() devuelve un objeto con la propiedad .Result u ordersList directamente
+            // Si devuelve una lista directa: ordersList = response;
+            if (response != null && response.Result != null)
+            {
+                // Se hace el cast o asignación dependiendo de tu DTO exacto.
+                ordersList = response.Result as List<OrderDTO> ?? new List<OrderDTO>();
+            }
+            else
+            {
+                ordersList = new List<OrderDTO>();
+            }
         }
-        else
+        catch (Exception)
         {
-            lista = new List<OrderDTO>();
+            // Manejo por si falla la API
+            ordersList = new List<OrderDTO>();
+        }
+
+        // 2. Traer el array de datos de envío desde el LocalStorage
+        try
+        {
+            var existingDataJson = await _js.InvokeAsync<string>("localStorage.getItem", "demoShippingData");
+
+            if (!string.IsNullOrWhiteSpace(existingDataJson))
+            {
+                localShippingData = JsonSerializer.Deserialize<List<ShippingAddressData>>(existingDataJson) ?? new();
+            }
+        }
+        catch (Exception)
+        {
+            // Falla al leer el JS (por pre-renderizado, etc.)
+            localShippingData = new List<ShippingAddressData>();
         }
     }
 
-    private void VerDetalle(OrderDTO orden)
+    // Método auxiliar para cruzar los datos en la tabla y modal
+    private ShippingAddressData? GetShippingData(int currentOrderId)
     {
-        ordenSeleccionada = orden;
+        return localShippingData.FirstOrDefault(s => s.OrderId == currentOrderId);
+    }
+
+    // Lógica del Modal
+    private void VerDetalle(OrderDTO order)
+    {
+        ordenSeleccionada = order;
         mostrarModal = true;
     }
 
     private void CerrarModal()
     {
         mostrarModal = false;
+        ordenSeleccionada = null;
+    }
+
+    // Clase para mapear los datos del localStorage
+    public class ShippingAddressData
+    {
+        public int OrderId { get; set; }
+        public string ZipCode { get; set; }
+        public string Street { get; set; }
+        public string Number { get; set; }
+        public string Apartment { get; set; }
+        public string Reference { get; set; }
+        public string City { get; set; }
+        public decimal ShippingCost { get; set; }
     }
 }

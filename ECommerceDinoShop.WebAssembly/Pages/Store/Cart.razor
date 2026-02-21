@@ -1,223 +1,211 @@
 ﻿@page "/cart"
 
 @using ECommerceDinoShop.DTO
+@using ECommerceDinoShop.DTO.Shipping
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using Microsoft.JSInterop 
-
+@using System.Text.Json
+@inject IOrderService _orderService
+@inject IShippingService _shippingService
 @inject ICartService _cartService
 @inject IToastService _toastService
 @inject NavigationManager _navServicio
 @inject HttpClient _http
 @inject IJSRuntime _js
 
-<div class="row mt-4">
-    <div class="col-sm-8">
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm bg-light table-bordered">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width:102px"></th>
-                                <th>Producto</th>
-                                <th>Precio</th>
-                                <th>Cantidad</th>
-                                <th>Total</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (list.Any())
-                            {
-                                foreach (var item in list)
-                                {
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Mi Carrito</h5>
+                </div>
+                <div class="card-body">
+                    @if (list != null && list.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
                                     <tr>
-                                        <td valign="middle">
-                                            <img class="card-img-top" src="@item.Product.ImageUrl" style="width:100px">
-                                        </td>
-                                        <td valign="middle">@item.Product.Name</td>
-                                        <td valign="middle">@item.Product.Price</td>
-                                        <td valign="middle" align="center">
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-outline-danger" @onclick="(() =>Decrease(item.Product.IdProduct))">
-                                                    -
-                                                </button>
-                                                <input class="form-control" readonly="readonly" style="width:50px" value="@item.Quantity" />
-                                                <button type="button" class="btn btn-success" @onclick="(() =>Increase(item.Product.IdProduct))">
-                                                    +
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td valign="middle">@item.Total</td>
-                                        <td valign="middle">
-                                            <button type="button" class="btn btn-danger" @onclick="(async () => await Delete(item.Product.IdProduct))">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16">
-                                                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
-                                                </svg>
-                                            </button>
-                                        </td>
+                                        <th>Producto</th>
+                                        <th>Precio</th>
+                                        <th>Cantidad</th>
+                                        <th>Subtotal</th>
+                                        <th></th>
                                     </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="6">
-                                        <div class="alert alert-warning" role="alert">
-                                            No hay productos en el carrito
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in list)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="@item.Product.ImageUrl" alt="@item.Product.Name" style="width: 50px; height: 50px; object-fit: cover;" class="me-2 rounded" />
+                                                    <span>@item.Product.Name</span>
+                                                </div>
+                                            </td>
+                                            <td>$@item.Price</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <button class="btn btn-sm btn-outline-secondary px-2" @onclick="() => Decrease(item.Product.IdProduct)">-</button>
+                                                    <span class="mx-2">@item.Quantity</span>
+                                                    <button class="btn btn-sm btn-outline-secondary px-2" @onclick="() => Increase(item.Product.IdProduct)">+</button>
+                                                </div>
+                                            </td>
+                                            <td>$@(item.Price* item.Quantity)</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-danger" @onclick="() => Delete(item.Product.IdProduct)">
+                                                    <i class="oi oi-trash"></i> Quitar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center">
+                            Tu carrito está vacío. <a href="/catalog">¡Sigue comprando!</a>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
-    </div>
 
-    
-    <div class="col-sm-4">
-        <div class="card mb-3">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">Datos de Facturación</h5>
-            </div>
-            <div class="card-body p-4">
-                <EditForm Model="paymentModel" OnValidSubmit="ProcessPaymentWithMercadoPago">
-                    <DataAnnotationsValidator />
+        <div class="col-md-5">
 
-                    @* SECCIÓN 1: IDENTIDAD *@
-                    <h6 class="text-secondary border-bottom pb-2 mb-3">
-                        <i class="bi bi-person-badge me-2"></i>Datos Personales
-                    </h6>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted">Nombre</label>
-                            <InputText class="form-control" placeholder="Ej: Juan" @bind-Value="paymentModel.Name" disabled="@disabled" />
-                            <ValidationMessage For="@(() => paymentModel.Name)" />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted">Apellido</label>
-                            <InputText class="form-control" placeholder="Ej: Pérez" @bind-Value="paymentModel.Surname" disabled="@disabled" />
-                            <ValidationMessage For="@(() => paymentModel.Surname)" />
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small text-muted">Correo Electrónico</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
-                            <InputText class="form-control" placeholder="juan@mail.com" @bind-Value="paymentModel.Email" disabled="@disabled" />
-                        </div>
-                        <ValidationMessage For="@(() => paymentModel.Email)" />
-                    </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-4">
-                            <label class="form-label small text-muted">Tipo Doc.</label>
-                            DNI:
-                        </div>
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="oi oi-location"></i> Opciones de Envío</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 align-items-center mb-3">
                         <div class="col-8">
-                            <label class="form-label small text-muted">Número Doc.</label>
-                            <InputText class="form-control" placeholder="Sin puntos" @bind-Value="paymentModel.IdentificationNumber" disabled="@disabled" />
-                            <ValidationMessage For="@(() => paymentModel.IdentificationNumber)" />
+                            <input type="text" class="form-control" placeholder="Ingresa tu Código Postal" @bind="shippingData.ZipCode" />
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-outline-primary w-100" @onclick="CalculateShipping" disabled="@string.IsNullOrWhiteSpace(shippingData.ZipCode)">Cotizar</button>
                         </div>
                     </div>
 
-                    @* SECCIÓN 2: CONTACTO *@
-                    <h6 class="text-secondary border-bottom pb-2 mb-3 mt-4">
-                        <i class="bi bi-telephone me-2"></i>Teléfono
-                    </h6>
+                    @if (isCalculatingShipping)
+                    {
+                        <div class="text-center text-primary my-2">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Calculando...
+                        </div>
+                    }
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-4">
-                            <label class="form-label small text-muted">Cód. Área</label>
-                            <div class="input-group">
-                                <span class="input-group-text text-muted">0</span>
-                                <InputText class="form-control" placeholder="381" @bind-Value="paymentModel.PhoneAreaCode" disabled="@disabled" />
+                    @if (shippingOptions != null && shippingOptions.Any())
+                    {
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">Selecciona una opción de Correo Argentino:</label>
+                            <select class="form-select" @onchange="OnShippingOptionSelected">
+                                <option value="0">Seleccione un método de envío...</option>
+                                @foreach (var option in shippingOptions)
+                                {
+                                    <option value="@option.Price">@option.Name = $@option.Price</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="oi oi-home"></i> Dirección de Entrega</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-8 mb-2">
+                            <label class="form-label small mb-1">Calle</label>
+                            <input type="text" class="form-control form-control-sm" @bind="shippingData.Street" placeholder="Ej: Av. San Martín" />
+                        </div>
+                        <div class="col-4 mb-2">
+                            <label class="form-label small mb-1">Número</label>
+                            <input type="text" class="form-control form-control-sm" @bind="shippingData.Number" placeholder="Ej: 1234" />
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small mb-1">Piso / Depto</label>
+                            <input type="text" class="form-control form-control-sm" @bind="shippingData.Apartment" placeholder="Ej: 3 B" />
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small mb-1">Localidad/Provincia</label>
+                            <input type="text" class="form-control form-control-sm" @bind="shippingData.City" placeholder="Ej: San Miguel de Tucumán" />
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label small mb-1">Referencias de entrega</label>
+                            <textarea class="form-control form-control-sm" @bind="shippingData.Reference" rows="2" placeholder="Ej: Entre calles, color del portón, dejar en recepción..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-primary">
+                <div class="card-body">
+                    <h5 class="card-title border-bottom pb-2 mb-3">Resumen de Compra</h5>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal de productos:</span>
+                        <span>$@list.Sum(i => i.Total )</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Costo de envío:</span>
+                        <span>$@selectedShippingCost</span>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-between mb-4">
+                        <h4 class="fw-bold mb-0">Total:</h4>
+                        <h4 class="fw-bold text-success mb-0">$@(list.Sum(i => i.Total ) + selectedShippingCost)</h4>
+                    </div>
+
+                    <AuthorizeView>
+                        <Authorized>
+                            <button class="btn btn-primary w-100 btn-lg shadow-sm"
+                                    @onclick="ProcessPaymentWithMercadoPago"
+                                    disabled="@(list == null || !list.Any() || selectedShippingCost == 0 || string.IsNullOrWhiteSpace(shippingData.Street))">
+                                Pagar con Mercado Pago <img src="images/mercadopago.png" alt="MP" style="height: 20px; margin-left: 5px;" />
+                            </button>
+
+                            @if (selectedShippingCost == 0 || string.IsNullOrWhiteSpace(shippingData.Street))
+                            {
+                                <div class="text-danger small text-center mt-2">
+                                    Debes cotizar, elegir un envío y completar tu dirección (Calle) para continuar.
+                                </div>
+                            }
+                        </Authorized>
+                        <NotAuthorized>
+                            <div class="alert alert-info text-center">
+                                Debes <a href="/login">iniciar sesión</a> para realizar tu compra.
                             </div>
-                            <ValidationMessage For="@(() => paymentModel.PhoneAreaCode)" />
-                        </div>
-                        <div class="col-8">
-                            <label class="form-label small text-muted">Número</label>
-                            <InputText class="form-control" placeholder="155977039" @bind-Value="paymentModel.PhoneNumber" disabled="@disabled" />
-                            <ValidationMessage For="@(() => paymentModel.PhoneNumber)" />
-                        </div>
-                    </div>
+                        </NotAuthorized>
+                    </AuthorizeView>
 
-                    @* SECCIÓN 3: UBICACIÓN *@
-                    <h6 class="text-secondary border-bottom pb-2 mb-3 mt-4">
-                        <i class="bi bi-geo-alt me-2"></i>Domicilio de Envío
-                    </h6>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-8">
-                            <label class="form-label small text-muted">Calle</label>
-                            <InputText class="form-control" placeholder="Ej: Av. Roca" @bind-Value="paymentModel.StreetName" disabled="@disabled" />
-                            <ValidationMessage For="@(() => paymentModel.StreetName)" />
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label small text-muted">Altura</label>
-                            <InputText class="form-control" placeholder="123" @bind-Value="paymentModel.StreetNumber" disabled="@disabled" />
-                            <ValidationMessage For="@(() => paymentModel.StreetNumber)" />
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small text-muted">Código Postal</label>
-                        <InputText class="form-control" placeholder="Ej: 4000" @bind-Value="paymentModel.ZipCode" disabled="@disabled" />
-                        <ValidationMessage For="@(() => paymentModel.ZipCode)" />
-                    </div>
-
-                    @* RESUMEN DE PAGO *@
-                    <div class="bg-light p-3 rounded border mt-4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold text-dark">Total a Pagar:</span>
-                            <span class="fs-5 fw-bold text-success">$ @(list.Sum(i => i.Total))</span>
-                        </div>
-                    </div>
-
-                    <div class="mt-3">
-                        <AuthorizeView>
-                            <Authorized Context="authContext">
-                                <div class="d-grid gap-2">
-                                    @if (isProcessing)
-                                    {
-                                        <button class="btn btn-secondary py-2" disabled type="button">
-                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            Procesando pedido...
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button class="btn btn-warning py-2 fw-bold shadow-sm" type="submit" disabled="@(!list.Any())" id="walletBrick_container">
-                                            <i class="bi bi-wallet2 me-2"></i> Ir a Pagar con Mercado Pago
-                                        </button>
-                                    }
-                                </div>
-                            </Authorized>
-                            <NotAuthorized Context="authContext">
-                                <div class="alert alert-warning d-flex align-items-center mt-2" role="alert">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    <div>Inicia sesión para finalizar la compra.</div>
-                                </div>
-                            </NotAuthorized>
-                        </AuthorizeView>
-                    </div>
-
-                </EditForm>
+                </div>
             </div>
+
         </div>
     </div>
 </div>
+
 
 @code {
     private bool disabled = true;
     private bool isProcessing = false;
     private List<CartDTO> list = new List<CartDTO>();
     private CardDTO card = new CardDTO();
+
+    // Variables para el carrito
+    private decimal cartTotal = 0; // Asigna aquí el total de los productos de tu carrito
+    private decimal selectedShippingCost = 0;
+    private List<ShippingOptionDTO> shippingOptions = new(); // Reemplaza con tu DTO de opciones
+    private bool isCalculatingShipping = false;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationState { get; set; }
@@ -241,6 +229,7 @@
         var authState = await AuthenticationState;
         if (authState.User.Identity.IsAuthenticated)
             disabled = false;
+
     }
 
     private void Decrease(int id)
@@ -272,9 +261,65 @@
         }
     }
 
+    // Modelo de datos para capturar la dirección
+    private ShippingAddressData shippingData = new ShippingAddressData();
+
+    // Método que reutiliza la lógica de Detail.razor
+    private async Task CalculateShipping()
+    {
+        isCalculatingShipping = true; // Indica que está calculando
+        try
+        {
+            var response = await _shippingService.QuoteShipping(shippingData.ZipCode);
+            shippingOptions = response?.Result ?? new List<ShippingOptionDTO>();
+        }
+        finally
+        {
+            isCalculatingShipping = false; // Finaliza el cálculo
+        }
+    }
+
+    private void OnShippingOptionSelected(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value.ToString(), out decimal cost))
+        {
+            selectedShippingCost = cost;
+        }
+    }
+
     // LÓGICA CORE INTEGRADA: Mercado Pago + Orden en Backend
     private async Task ProcessPaymentWithMercadoPago()
     {
+        // 1. Obtener la lista de órdenes para calcular el próximo ID
+        var ordersResponse = await _orderService.List();
+        int lastOrderId = 0;
+
+        if (ordersResponse.Result != null && ordersResponse.Result.Any())
+        {
+            lastOrderId = ordersResponse.Result.Max(o => o.IdOrder);
+        }
+
+        int nextOrderId = lastOrderId + 1;
+
+        // 2. Preparar el registro para el LocalStorage
+        shippingData.OrderId = nextOrderId;
+        shippingData.ShippingCost = selectedShippingCost;
+
+        // 3. Traer el array actual de localStorage (si existe) y actualizarlo
+        var existingDataJson = await _js.InvokeAsync<string>("localStorage.getItem", "demoShippingData");
+
+        var savedShippings = string.IsNullOrEmpty(existingDataJson)
+            ? new List<ShippingAddressData>()
+            : JsonSerializer.Deserialize<List<ShippingAddressData>>(existingDataJson);
+
+        savedShippings.Add(shippingData);
+
+        // Guardar el array actualizado en localStorage
+        await _js.InvokeVoidAsync("localStorage.setItem", "demoShippingData", JsonSerializer.Serialize(savedShippings));
+
+
+
+
         if(list.Count == 0)
         {
             _toastService.ShowWarning("No se encontraron productos");
@@ -297,6 +342,8 @@
             }
 
             paymentModel.IdUser = idUser;
+   
+            paymentModel.ShippingCost = selectedShippingCost;
 
             // 2. Mapeo Seguro: CartDTO -> CartItemShortDTO
             // Convertimos la lista visual a la lista que necesita el DTO de pago
@@ -336,5 +383,18 @@
         {
             isProcessing = false;
         }
+    }
+
+    // Clase auxiliar para manejar la información
+    public class ShippingAddressData
+    {
+        public int OrderId { get; set; }
+        public string ZipCode { get; set; }
+        public string Street { get; set; }
+        public string Number { get; set; }
+        public string Apartment { get; set; }
+        public string Reference { get; set; }
+        public string City { get; set; }
+        public decimal ShippingCost { get; set; }
     }
 }

@@ -48,6 +48,19 @@ namespace ECommerceDinoShop.Service.Implementation
                 });
             }
 
+            if (model.ShippingCost > 0)
+            {
+                itemsRequest.Add(new PreferenceItemRequest
+                {
+                    Id = "SHIPPING", // Un ID identificador fijo
+                    Title = "Costo de Envío",
+                    Quantity = 1,
+                    CurrencyId = "ARS",
+                    Description = "Costo de envío seleccionado por el cliente",
+                    UnitPrice = model.ShippingCost
+                });
+            }
+
             var clientUrl = "https://localhost:7183"; 
             var notificationUrl = "https://janiya-oxidimetric-wilfred.ngrok-free.dev/api/payment/webhook";
 
