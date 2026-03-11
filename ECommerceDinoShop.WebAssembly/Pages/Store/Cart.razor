@@ -287,7 +287,7 @@
         }
     }
 
-    // LÓGICA CORE INTEGRADA: Mercado Pago + Orden en Backend
+    // LÓGICA CORE INTEGRADA
     private async Task ProcessPaymentWithMercadoPago()
     {
         // 1. Obtener la lista de órdenes para calcular el próximo ID
@@ -366,9 +366,7 @@
 
                 // 4. Iniciar Checkout Pro de Mercado Pago (Modal/Redirect)
                 await _js.InvokeVoidAsync("mercadoPagoCheckout", publicKey, preferenceId);
-                
-                // Nota: No limpiamos el carrito aquí. Se limpia en la pagina "Success" o "Aprobado" 
-                // cuando MP retorna, o mediante el Webhook.
+             
             }
             else
             {
@@ -385,7 +383,6 @@
         }
     }
 
-    // Clase auxiliar para manejar la información
     public class ShippingAddressData
     {
         public int OrderId { get; set; }
